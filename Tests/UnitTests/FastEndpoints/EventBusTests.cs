@@ -17,7 +17,7 @@ public class EventBusTests
          .Once();
 
         var evnt = Testory.CreateEvent([fakeHandler]);
-        await evnt.PublishAsync(cancellation: TestContext.CancellationToken);
+        await evnt.PublishAsync(cancellation: TestContext.Current.CancellationToken);
     }
 
     [Test]

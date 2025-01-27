@@ -1,5 +1,4 @@
 ﻿using FastEndpoints.Swagger;
-using Xunit;
 
 namespace SchemaNameGen;
 
@@ -8,60 +7,60 @@ public class SchemaNameGeneratorTests
     static readonly SchemaNameGenerator _shortNameGenerator = new(shortSchemaNames: true);
     static readonly SchemaNameGenerator _longNameGenerator = new(shortSchemaNames: false);
 
-    [Fact]
-    public void ShortNameNonGeneric()
+    [Test]
+    public async Task ShortNameNonGeneric()
     {
         var res = _shortNameGenerator.Generate(typeof(Model));
-        res.ShouldBe("Model");
+        await Assert.That(res).IsEqualTo("Model");
     }
 
-    [Fact]
-    public void ShortNameGeneric()
+    [Test]
+    public async Task ShortNameGeneric()
     {
         var res = _shortNameGenerator.Generate(typeof(GenericModel<string>));
-        res.ShouldBe("GenericModelOfString");
+        await Assert.That(res).IsEqualTo("GenericModelOfString");
     }
 
-    [Fact]
-    public void ShortNameGenericDeep()
+    [Test]
+    public async Task ShortNameGenericDeep()
     {
         var res = _shortNameGenerator.Generate(typeof(GenericModel<GenericModel<List<Model>>>));
-        res.ShouldBe("GenericModelOfGenericModelOfListOfModel");
+        await Assert.That(res).IsEqualTo("GenericModelOfGenericModelOfListOfModel");
     }
 
-    [Fact]
-    public void ShortNameGenericMulti()
+    [Test]
+    public async Task ShortNameGenericMulti()
     {
         var res = _shortNameGenerator.Generate(typeof(GenericMultiModel<List<Model>, GenericModel<int>>));
-        res.ShouldBe("GenericMultiModelOfListOfModelAndGenericModelOfInt32");
+        await Assert.That(res).IsEqualTo("GenericMultiModelOfListOfModelAndGenericModelOfInt32");
     }
 
-    [Fact]
-    public void LongNameNonGeneric()
+    [Test]
+    public async Task LongNameNonGeneric()
     {
         var res = _longNameGenerator.Generate(typeof(Model));
-        res.ShouldBe("SchemaNameGenModel");
+        await Assert.That(res).IsEqualTo("SchemaNameGenModel");
     }
 
-    [Fact]
-    public void LongNameGeneric()
+    [Test]
+    public async Task LongNameGeneric()
     {
         var res = _longNameGenerator.Generate(typeof(GenericModel<string>));
-        res.ShouldBe("SchemaNameGenGenericModelOfString");
+        await Assert.That(res).IsEqualTo("SchemaNameGenGenericModelOfString");
     }
 
-    [Fact]
-    public void LongNameGenericDeep()
+    [Test]
+    public async Task LongNameGenericDeep()
     {
         var res = _longNameGenerator.Generate(typeof(GenericModel<List<GenericModel<string>>>));
-        res.ShouldBe("SchemaNameGenGenericModelOfListOfGenericModelOfString");
+        await Assert.That(res).IsEqualTo("SchemaNameGenGenericModelOfListOfGenericModelOfString");
     }
 
-    [Fact]
-    public void LongNameGenericDeepMulti()
+    [Test]
+    public async Task LongNameGenericDeepMulti()
     {
         var res = _longNameGenerator.Generate(typeof(GenericMultiModel<List<GenericModel<string>>, GenericMultiModel<int, string>>));
-        res.ShouldBe("SchemaNameGenGenericMultiModelOfListOfGenericModelOfStringAndGenericMultiModelOfInt32AndString");
+        await Assert.That(res).IsEqualTo("SchemaNameGenGenericMultiModelOfListOfGenericModelOfStringAndGenericMultiModelOfInt32AndString");
     }
 }
 
