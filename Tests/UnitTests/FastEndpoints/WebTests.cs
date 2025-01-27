@@ -9,13 +9,12 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using TestCases.TypedResultTest;
 using Web.Services;
-using Xunit;
 
 namespace Web;
 
 public class WebTests
 {
-    [Fact]
+    [Test]
     public async Task mapper_endpoint_setting_mapper_manually()
     {
         //arrange
@@ -30,15 +29,15 @@ public class WebTests
         };
 
         //act
-        await ep.HandleAsync(req, default);
+        await ep.HandleAsync(req, CancellationToken.None);
 
         //assert
-        ep.Response.ShouldNotBeNull();
-        ep.Response.Name.ShouldBe("john doe");
-        ep.Response.Age.ShouldBe(22);
+        await Assert.That(ep.Response).IsNotNull();
+        await Assert.That(ep.Response.Name).IsEqualTo("john doe");
+        await Assert.That(ep.Response.Age).IsEqualTo(22);
     }
 
-    [Fact]
+    [Test]
     public async Task mapper_endpoint_resolves_mapper_automatically()
     {
         //arrange
@@ -52,15 +51,15 @@ public class WebTests
         };
 
         //act
-        await ep.HandleAsync(req, default);
+        await ep.HandleAsync(req, CancellationToken.None);
 
         //assert
-        ep.Response.ShouldNotBeNull();
-        ep.Response.Name.ShouldBe("john doe");
-        ep.Response.Age.ShouldBe(22);
+        await Assert.That(ep.Response).IsNotNull();
+        await Assert.That(ep.Response.Name).IsEqualTo("john doe");
+        await Assert.That(ep.Response.Age).IsEqualTo(22);
     }
 
-    [Fact]
+    [Test]
     public async Task endpoint_with_mapper_throws_mapper_not_set()
     {
         var logger = A.Fake<ILogger<TestCases.MapperTest.Endpoint>>();
@@ -68,19 +67,19 @@ public class WebTests
 
         ep.Map = null!;
         ep.Definition.MapperType = null;
-
+        
         var req = new TestCases.MapperTest.Request
         {
             FirstName = "john",
             LastName = "doe",
             Age = 22
         };
-
-        var ex = await Should.ThrowAsync<InvalidOperationException>(() => ep.HandleAsync(req, CancellationToken.None));
-        ex.Message.ShouldBe("Endpoint mapper is not set!");
+        
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => ep.HandleAsync(req, CancellationToken.None));
+        await Assert.That(ex.Message).IsEqualTo("Endpoint mapper is not set!");
     }
 
-    [Fact]
+    [Test]
     public async Task handle_with_correct_input_without_context_should_set_create_customer_response_correctly()
     {
         var emailer = A.Fake<IEmailService>();
@@ -93,12 +92,12 @@ public class WebTests
             CreatedBy = "by harry potter"
         };
 
-        await ep.HandleAsync(req, default);
-
-        ep.Response.ShouldBe("test email by harry potter");
+        await ep.HandleAsync(req, CancellationToken.None);
+        
+        await Assert.That(ep.Response).IsEqualTo("test email by harry potter");
     }
 
-    [Fact]
+    [Test]
     public async Task handle_with_correct_input_with_property_di_without_context_should_set_create_customer_response_correctly()
     {
         var emailer = A.Fake<IEmailService>();
@@ -115,12 +114,11 @@ public class WebTests
             CreatedBy = "by harry potter"
         };
 
-        await ep.HandleAsync(req, default);
-
-        ep.Response.ShouldBe("test email by harry potter");
+        await ep.HandleAsync(req, CancellationToken.None);
+        await Assert.That(ep.Response).IsEqualTo("test email by harry potter");
     }
 
-    [Fact]
+    [Test]
     public async Task handle_with_correct_input_with_context_should_set_login_admin_response_correctly()
     {
         //arrange
@@ -139,16 +137,16 @@ public class WebTests
         };
 
         //act
-        await ep.HandleAsync(req, default);
+        await ep.HandleAsync(req, CancellationToken.None);
         var rsp = ep.Response;
 
         //assert
-        ep.ValidationFailed.ShouldBeFalse();
-        rsp.ShouldNotBeNull();
-        rsp.Permissions.ShouldContain("Inventory_Delete_Item");
+        await Assert.That(rsp).IsNotNull();
+        await Assert.That(rsp.Permissions).Contains("Inventory_Delete_Item");
+        await Assert.That(ep.ValidationFailed).IsFalse();
     }
 
-    [Fact]
+    [Test]
     public async Task handle_with_bad_input_should_set_admin_login_validation_failed()
     {
         //arrange
@@ -164,44 +162,45 @@ public class WebTests
         };
 
         //act
-        await ep.HandleAsync(req, default);
+        await ep.HandleAsync(req, CancellationToken.None);
 
         //assert
-        ep.ValidationFailed.ShouldBeTrue();
-        ep.ValidationFailures.Any(f => f.ErrorMessage == "Authentication Failed!").ShouldBeTrue();
+        await Assert.That(ep.ValidationFailed).IsTrue();
+        await Assert.That(ep.ValidationFailures.Any(f => f.ErrorMessage == "Authentication Failed!")).IsTrue();
     }
 
-    [Fact]
+    [Test]
     public async Task execute_customer_recent_list_should_return_correct_data()
     {
         var endpoint = Factory.Create<Customers.List.Recent.Endpoint>();
-        var res = await endpoint.ExecuteAsync(default) as Customers.List.Recent.Response;
+        var res = await endpoint.ExecuteAsync(CancellationToken.None) as Customers.List.Recent.Response;
 
-        res?.Customers?.Count().ShouldBe(3);
-        res?.Customers?.First().Key.ShouldBe("ryan gunner");
-        res?.Customers?.Last().Key.ShouldBe(res?.Customers?.Last().Key);
+        await Assert.That(res?.Customers).IsNotNull().And.HasCount().EqualTo(3);
+        await Assert.That(res?.Customers?.First().Key).IsEqualTo("ryan gunner");
+        await Assert.That(res?.Customers?.Last().Key).IsEqualTo(res?.Customers?.Last().Key);
     }
 
-    [Fact]
+    [Test]
     public async Task union_type_result_returning_endpoint()
     {
         var ep = Factory.Create<MultiResultEndpoint>();
 
         var res0 = await ep.ExecuteAsync(new() { Id = 0 }, CancellationToken.None);
-        res0.Result.ShouldBeOfType<NotFound>();
+        await Assert.That(res0.Result).IsTypeOf<NotFound>();
 
         var res1 = await ep.ExecuteAsync(new() { Id = 1 }, CancellationToken.None);
         var errors = (res1.Result as ProblemDetails)!.Errors;
-        errors.Count().ShouldBe(1);
-        errors.Single(e => e.Name == nameof(Request.Id)).Reason.ShouldBe("value has to be greater than 1");
+        await Assert.That(errors).HasCount().EqualTo(1);
+        await Assert.That(errors.First().Name).IsEqualTo(nameof(Request.Id)).Because("value has to be greater than 1");
 
         var res2 = await ep.ExecuteAsync(new() { Id = 2 }, CancellationToken.None);
         var response = res2.Result as Ok<Response>;
-        response!.StatusCode.ShouldBe(200);
-        response.Value!.RequestId.ShouldBe(2);
+        await Assert.That(response).IsNotNull();
+        await Assert.That(response?.Value?.RequestId).IsNotNull().And.IsEqualTo(2);
+        await Assert.That(response?.StatusCode).IsNotNull().And.IsEqualTo(200);
     }
 
-    [Fact]
+    [Test]
     public async Task created_at_success()
     {
         var linkgen = A.Fake<LinkGenerator>();
@@ -221,13 +220,13 @@ public class WebTests
                 Price = 100,
                 GenerateFullUrl = false
             },
-            default);
+            CancellationToken.None);
 
-        ep.HttpContext.Response.Headers.ContainsKey("Location");
-        ep.HttpContext.Response.StatusCode.ShouldBe(201);
+        await Assert.That(ep.HttpContext.Response.Headers.ContainsKey("Location")).IsTrue();
+        await Assert.That(ep.HttpContext.Response.StatusCode).IsEqualTo(201);
     }
 
-    [Fact]
+    [Test]
     public async Task processor_state_access_from_unit_test()
     {
         //arrange
@@ -238,15 +237,15 @@ public class WebTests
         state.Name = "blah";
 
         //act
-        await ep.HandleAsync(new() { Id = 0 }, default);
+        await ep.HandleAsync(new() { Id = 0 }, CancellationToken.None);
 
         //assert
         // False represents the lack of global state addition from endpoint without global preprocessor
-        ep.Response.ShouldBe("101 blah False");
-        state.Duration.ShouldBeGreaterThan(95);
+        await Assert.That(ep.Response).IsEqualTo("101 blah False");
+        await Assert.That(state.Duration).IsGreaterThan(95);
     }
 
-    [Fact]
+    [Test]
     public async Task unit_test_concurrency_and_httpContext_isolation()
     {
         await Parallel.ForEachAsync(
@@ -259,11 +258,12 @@ public class WebTests
                         ctx.AddTestServices(s => s.AddSingleton(new TestCases.UnitTestConcurrencyTest.SingltonSVC(id)));
                     });
 
-                (await ep.ExecuteAsync(new() { Id = id }, default)).ShouldBe(id);
+                var result = await ep.ExecuteAsync(new() { Id = id }, CancellationToken.None);
+                await Assert.That(result).IsEqualTo(id);
             });
     }
 
-    [Fact]
+    [Test]
     public async Task list_element_validation_error()
     {
         var ep = Factory.Create<TestCases.ValidationErrorTest.ListValidationErrorTestEndpoint>();
@@ -275,16 +275,16 @@ public class WebTests
                     1, 2, 3
                 }
             },
-            default);
+            CancellationToken.None);
 
-        ep.ValidationFailed.ShouldBeTrue();
-        ep.ValidationFailures.Count.ShouldBe(3);
-        ep.ValidationFailures[0].PropertyName.ShouldBe("NumbersList[0]");
-        ep.ValidationFailures[1].PropertyName.ShouldBe("NumbersList[1]");
-        ep.ValidationFailures[2].PropertyName.ShouldBe("NumbersList[2]");
+        await Assert.That(ep.ValidationFailed).IsTrue();
+        await Assert.That(ep.ValidationFailures.Count).IsEqualTo(3);
+        await Assert.That(ep.ValidationFailures[0].PropertyName).IsEqualTo("NumbersList[0]");
+        await Assert.That(ep.ValidationFailures[1].PropertyName).IsEqualTo("NumbersList[1]");
+        await Assert.That(ep.ValidationFailures[2].PropertyName).IsEqualTo("NumbersList[2]");
     }
 
-    [Fact]
+    [Test]
     public async Task dict_element_validation_error()
     {
         var ep = Factory.Create<TestCases.ValidationErrorTest.DictionaryValidationErrorTestEndpoint>();
@@ -297,15 +297,15 @@ public class WebTests
                     { "b", "2" }
                 }
             },
-            default);
+            CancellationToken.None);
 
-        ep.ValidationFailed.ShouldBeTrue();
-        ep.ValidationFailures.Count.ShouldBe(2);
-        ep.ValidationFailures[0].PropertyName.ShouldBe("StringDictionary[\"a\"]");
-        ep.ValidationFailures[1].PropertyName.ShouldBe("StringDictionary[\"b\"]");
+        await Assert.That(ep.ValidationFailed).IsTrue();
+        await Assert.That(ep.ValidationFailures.Count).IsEqualTo(2);
+        await Assert.That(ep.ValidationFailures[0].PropertyName).IsEqualTo("StringDictionary[\"a\"]");
+        await Assert.That(ep.ValidationFailures[1].PropertyName).IsEqualTo("StringDictionary[\"b\"]");
     }
 
-    [Fact]
+    [Test]
     public async Task array_element_validation_error()
     {
         var ep = Factory.Create<TestCases.ValidationErrorTest.ArrayValidationErrorTestEndpoint>();
@@ -318,15 +318,15 @@ public class WebTests
                     "b"
                 }
             },
-            default);
+            CancellationToken.None);
 
-        ep.ValidationFailed.ShouldBeTrue();
-        ep.ValidationFailures.Count.ShouldBe(2);
-        ep.ValidationFailures[0].PropertyName.ShouldBe("StringArray[0]");
-        ep.ValidationFailures[1].PropertyName.ShouldBe("StringArray[1]");
+        await Assert.That(ep.ValidationFailed).IsTrue();
+        await Assert.That(ep.ValidationFailures.Count).IsEqualTo(2);
+        await Assert.That(ep.ValidationFailures[0].PropertyName).IsEqualTo("StringArray[0]");
+        await Assert.That(ep.ValidationFailures[1].PropertyName).IsEqualTo("StringArray[1]");
     }
 
-    [Fact]
+    [Test]
     public async Task array_element_object_property_validation_error()
     {
         var ep = Factory.Create<TestCases.ValidationErrorTest.ObjectArrayValidationErrorTestEndpoint>();
@@ -339,15 +339,15 @@ public class WebTests
                     new TestCases.ValidationErrorTest.TObject { Test = "b" }
                 }
             },
-            default);
+            CancellationToken.None);
 
-        ep.ValidationFailed.ShouldBeTrue();
-        ep.ValidationFailures.Count.ShouldBe(2);
-        ep.ValidationFailures[0].PropertyName.ShouldBe("ObjectArray[0].Test");
-        ep.ValidationFailures[1].PropertyName.ShouldBe("ObjectArray[1].Test");
+        await Assert.That(ep.ValidationFailed).IsTrue();
+        await Assert.That(ep.ValidationFailures.Count).IsEqualTo(2);
+        await Assert.That(ep.ValidationFailures[0].PropertyName).IsEqualTo("ObjectArray[0].Test");
+        await Assert.That(ep.ValidationFailures[1].PropertyName).IsEqualTo("ObjectArray[1].Test");
     }
 
-    [Fact]
+    [Test]
     public async Task list_in_list_validation_error()
     {
         var ep = Factory.Create<TestCases.ValidationErrorTest.ListInListValidationErrorTestEndpoint>();
@@ -360,17 +360,17 @@ public class WebTests
                     new() { 3, 4 }
                 }
             },
-            default);
+            CancellationToken.None);
 
-        ep.ValidationFailed.ShouldBeTrue();
-        ep.ValidationFailures.Count.ShouldBe(4);
-        ep.ValidationFailures[0].PropertyName.ShouldBe("NumbersList[0][0]");
-        ep.ValidationFailures[1].PropertyName.ShouldBe("NumbersList[0][1]");
-        ep.ValidationFailures[2].PropertyName.ShouldBe("NumbersList[1][0]");
-        ep.ValidationFailures[3].PropertyName.ShouldBe("NumbersList[1][1]");
+        await Assert.That(ep.ValidationFailed).IsTrue();
+        await Assert.That(ep.ValidationFailures.Count).IsEqualTo(4);
+        await Assert.That(ep.ValidationFailures[0].PropertyName).IsEqualTo("NumbersList[0][0]");
+        await Assert.That(ep.ValidationFailures[1].PropertyName).IsEqualTo("NumbersList[0][1]");
+        await Assert.That(ep.ValidationFailures[2].PropertyName).IsEqualTo("NumbersList[1][0]");
+        await Assert.That(ep.ValidationFailures[3].PropertyName).IsEqualTo("NumbersList[1][1]");
     }
 
-    [Fact]
+    [Test]
     public async Task problem_details_serialization_test()
     {
         var problemDetails = new ProblemDetails(
@@ -386,6 +386,6 @@ public class WebTests
         var json = JsonSerializer.Serialize(problemDetails);
         var res = JsonSerializer.Deserialize<ProblemDetails>(json)!;
         res.Errors = new HashSet<ProblemDetails.Error>(res.Errors);
-        res.ShouldBeEquivalentTo(problemDetails);
+        await Assert.That(res).IsEquivalentTo(problemDetails);
     }
 }

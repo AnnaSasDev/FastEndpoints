@@ -1,15 +1,13 @@
 ﻿using FakeItEasy;
 using FastEndpoints;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using TestCases.EventHandlingTest;
-using Xunit;
 
 namespace EventBus;
 
 public class EventBusTests
 {
-    [Fact]
+    [Test]
     public async Task AbilityToFakeAnEventHandler()
     {
         var fakeHandler = A.Fake<IEventHandler<NewItemAddedToStock>>();
@@ -18,11 +16,11 @@ public class EventBusTests
          .Returns(Task.CompletedTask)
          .Once();
 
-        var evnt = Factory.CreateEvent([fakeHandler]);
-        await evnt.PublishAsync(cancellation: TestContext.Current.CancellationToken);
+        var evnt = Testory.CreateEvent([fakeHandler]);
+        await evnt.PublishAsync(cancellation: TestContext.CancellationToken);
     }
 
-    [Fact]
+    [Test]
     public async Task EventHandlersExecuteSuccessfully()
     {
         var logger = A.Fake<ILogger<NotifyCustomers>>();
@@ -48,7 +46,7 @@ public class EventBusTests
         event1.Name.ShouldBe("pass");
     }
 
-    [Fact]
+    [Test]
     public async Task HandlerLogicThrowsException()
     {
         var logger = A.Fake<ILogger<NotifyCustomers>>();
@@ -59,12 +57,12 @@ public class EventBusTests
                 cancellation: TestContext.Current.CancellationToken));
     }
 
-    [Fact]
+    [Test]
     public async Task RegisterFakeEventHandlerAndPublish()
     {
         var fakeHandler = new FakeEventHandler();
 
-        Factory.RegisterTestServices(
+        Testory.RegisterTestServices(
             s =>
             {
                 s.AddSingleton<IEventHandler<NewItemAddedToStock>>(fakeHandler);

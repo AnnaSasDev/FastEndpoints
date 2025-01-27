@@ -1,7 +1,6 @@
 using FastEndpoints;
 using RichardSzalay.MockHttp;
 using Web.Auth;
-using Xunit;
 
 // ReSharper disable InconsistentNaming
 
@@ -9,7 +8,7 @@ namespace Unit.FastEndpoints;
 
 public class HttpClientExtensionsTests
 {
-    [Fact]
+    [Test]
     public async Task GETAsyncGeneratesUrlWithHydratedRouteArguments()
     {
         // Arrange

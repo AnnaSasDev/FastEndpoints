@@ -4,13 +4,12 @@ using Grpc.Core;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Xunit;
 
 namespace EventQueue;
 
 public class RoundRobinEventQueueTests
 {
-    [Fact]
+    [Test]
     public async Task multiple_subscribers()
     {
         var services = new ServiceCollection();
@@ -44,25 +43,25 @@ public class RoundRobinEventQueueTests
 
         if (writerA.Responses.Count == 2)
         {
-            writerB.Responses.Count.ShouldBe(1);
-            writerB.Responses[0].EventID.ShouldBe(222);
-
-            writerA.Responses[0].EventID.ShouldBe(111);
-            writerA.Responses[1].EventID.ShouldBe(333);
+            await Assert.That(writerB.Responses.Count).IsEqualTo(1);
+            await Assert.That(writerB.Responses[0].EventID).IsEqualTo(222);
+            
+            await Assert.That(writerA.Responses[0].EventID).IsEqualTo(111);
+            await Assert.That(writerA.Responses[1].EventID).IsEqualTo(333);
         }
         else if (writerB.Responses.Count == 2)
         {
-            writerA.Responses.Count.ShouldBe(1);
-            writerA.Responses[0].EventID.ShouldBe(222);
-
-            writerB.Responses[0].EventID.ShouldBe(111);
-            writerB.Responses[1].EventID.ShouldBe(333);
+            await Assert.That(writerA.Responses.Count).IsEqualTo(2);
+            await Assert.That(writerA.Responses[0].EventID).IsEqualTo(111);
+            
+            await Assert.That(writerB.Responses[0].EventID).IsEqualTo(222);
+            await Assert.That(writerB.Responses[1].EventID).IsEqualTo(333);
         }
         else
             throw new();
     }
 
-    [Fact]
+    [Test]
     public async Task multiple_subscribers_but_one_goes_offline()
     {
         var services = new ServiceCollection();
@@ -98,21 +97,21 @@ public class RoundRobinEventQueueTests
 
         if (writerA.Responses.Count == 2)
         {
-            writerA.Responses[0].EventID.ShouldBe(111);
-            writerA.Responses[1].EventID.ShouldBe(222);
-            writerB.Responses.Count.ShouldBe(0);
+            await Assert.That(writerA.Responses[0].EventID).IsEqualTo(111);
+            await Assert.That(writerA.Responses[1].EventID).IsEqualTo(222);
+            await Assert.That(writerB.Responses.Count).IsEqualTo(0);
         }
         else if (writerB.Responses.Count == 2)
         {
-            writerB.Responses[0].EventID.ShouldBe(111);
-            writerB.Responses[1].EventID.ShouldBe(222);
-            writerA.Responses.Count.ShouldBe(0);
+            await Assert.That(writerB.Responses[0].EventID).IsEqualTo(111);
+            await Assert.That(writerB.Responses[1].EventID).IsEqualTo(222);
+            await Assert.That(writerA.Responses.Count).IsEqualTo(0);
         }
         else
             throw new();
     }
 
-    [Fact]
+    [Test]
     public async Task only_one_subscriber()
     {
         var services = new ServiceCollection();
@@ -142,10 +141,10 @@ public class RoundRobinEventQueueTests
         while (writer.Responses.Count < 1)
             await Task.Delay(100);
 
-        writer.Responses.Count.ShouldBe(3);
-        writer.Responses[0].EventID.ShouldBe(111);
-        writer.Responses[1].EventID.ShouldBe(222);
-        writer.Responses[2].EventID.ShouldBe(333);
+        await Assert.That(writer.Responses).HasCount().EqualTo(3);
+        await Assert.That(writer.Responses[0].EventID).IsEqualTo(111);
+        await Assert.That(writer.Responses[1].EventID).IsEqualTo(222);
+        await Assert.That(writer.Responses[2].EventID).IsEqualTo(333);
     }
 
     class RRTestEventOnlyOne : IEvent

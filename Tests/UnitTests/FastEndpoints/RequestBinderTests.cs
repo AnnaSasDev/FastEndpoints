@@ -1,12 +1,11 @@
 ﻿using FastEndpoints;
 using Microsoft.AspNetCore.Http;
-using Xunit;
 
 namespace RequestBinder;
 
 public class RequestBinderTests
 {
-    [Fact]
+    [Test]
     public async Task CanBindClassDto()
     {
         var hCtx = new DefaultHttpContext();
@@ -19,10 +18,10 @@ public class RequestBinderTests
 
         var res = await binder.BindAsync(ctx, default);
 
-        res.Int.ShouldBe(intgr);
-        res.Guid.ShouldBe(guid);
-        res.DefaultValueProp.ShouldBe(345);
-        res.OptionalProp.ShouldBe(678);
+        await Assert.That(res.Int).IsEqualTo(intgr);
+        await Assert.That(res.Guid).IsEqualTo(guid);
+        await Assert.That(res.DefaultValueProp).IsEqualTo(345);
+        await Assert.That(res.OptionalProp).IsEqualTo(678);
     }
 
     sealed class RequestClass

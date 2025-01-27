@@ -2,21 +2,20 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Xunit;
 
 namespace EPData;
 
 public class EndpointDataTests
 {
-    [Fact]
-    public void ConfigureIsExecuted()
+    [Test]
+    public async Task ConfigureIsExecuted()
     {
         var ep = Factory.Create<ConfigureEndpoint>();
-        ep.Definition.Routes.ShouldHaveSingleItem("configure/test");
+        await Assert.That(ep.Definition.Routes).HasSingleItem().And.Contains("configure/test");
     }
 
-    [Fact]
-    public void ItCanFilterTypes()
+    [Test]
+    public async Task ItCanFilterTypes()
     {
         const string typename = "Foo";
         var options = new EndpointDiscoveryOptions
@@ -32,9 +31,9 @@ public class EndpointDataTests
         };
         sut.Found[0].Initialize(ep, null);
 
-        sut.Found.Length.ShouldBe(1);
-        sut.Found[0].Routes.Count().ShouldBe(1);
-        sut?.Found[0]?.Routes?[0].ShouldBeEquivalentTo(typename);
+        await Assert.That(sut.Found.Length).IsEqualTo(1);
+        await Assert.That(sut.Found[0].Routes).HasSingleItem();
+        await Assert.That(sut.Found[0].Routes[0]).IsEqualTo(typename);
     }
 
     static EndpointDefinition WireUpProcessorEndpoint()
@@ -56,8 +55,8 @@ public class EndpointDataTests
         return epDef;
     }
 
-    [Fact]
-    public void BaselineProcessorOrder()
+    [Test]
+    public async Task BaselineProcessorOrder()
     {
         var epDef = WireUpProcessorEndpoint();
 
@@ -67,23 +66,23 @@ public class EndpointDataTests
         epDef.PostProcessors(Order.Before, new PostProcOne(), new PostProcTwo());
         epDef.PostProcessors(Order.After, new PostProcThree(), new PostProcFour());
 
-        epDef.PreProcessorList.Count.ShouldBe(5);
-        epDef.PreProcessorList[0].ShouldBeOfType<ProcOne>();
-        epDef.PreProcessorList[1].ShouldBeOfType<ProcTwo>();
-        epDef.PreProcessorList[2].ShouldBeOfType<ProcRequest>();
-        epDef.PreProcessorList[3].ShouldBeOfType<ProcThree>();
-        epDef.PreProcessorList[4].ShouldBeOfType<ProcFour>();
-
-        epDef.PostProcessorList.Count.ShouldBe(5);
-        epDef.PostProcessorList[0].ShouldBeOfType<PostProcOne>();
-        epDef.PostProcessorList[1].ShouldBeOfType<PostProcTwo>();
-        epDef.PostProcessorList[2].ShouldBeOfType<PostProcRequest>();
-        epDef.PostProcessorList[3].ShouldBeOfType<PostProcThree>();
-        epDef.PostProcessorList[4].ShouldBeOfType<PostProcFour>();
+        await Assert.That(epDef.PreProcessorList).HasCount().EqualTo(5);
+        await Assert.That(epDef.PreProcessorList[0]).IsTypeOf<ProcOne>();
+        await Assert.That(epDef.PreProcessorList[1]).IsTypeOf<ProcTwo>();
+        await Assert.That(epDef.PreProcessorList[2]).IsTypeOf<ProcRequest>();
+        await Assert.That(epDef.PreProcessorList[3]).IsTypeOf<ProcThree>();
+        await Assert.That(epDef.PreProcessorList[4]).IsTypeOf<ProcFour>();
+        
+        await Assert.That(epDef.PostProcessorList).HasCount().EqualTo(5);
+        await Assert.That(epDef.PostProcessorList[0]).IsTypeOf<PostProcOne>();
+        await Assert.That(epDef.PostProcessorList[1]).IsTypeOf<PostProcTwo>();
+        await Assert.That(epDef.PostProcessorList[2]).IsTypeOf<PostProcRequest>();
+        await Assert.That(epDef.PostProcessorList[3]).IsTypeOf<PostProcThree>();
+        await Assert.That(epDef.PostProcessorList[4]).IsTypeOf<PostProcFour>();
     }
 
-    [Fact]
-    public void MultiCallProcessorOrder()
+    [Test]
+    public async Task MultiCallProcessorOrder()
     {
         var epDef = WireUpProcessorEndpoint();
 
@@ -97,22 +96,23 @@ public class EndpointDataTests
         epDef.PostProcessors(Order.After, new PostProcThree());
         epDef.PostProcessors(Order.After, new PostProcFour());
 
-        epDef.PreProcessorList.Count.ShouldBe(5);
-        epDef.PreProcessorList[0].ShouldBeOfType<ProcOne>();
-        epDef.PreProcessorList[1].ShouldBeOfType<ProcTwo>();
-        epDef.PreProcessorList[2].ShouldBeOfType<ProcRequest>();
-        epDef.PreProcessorList[3].ShouldBeOfType<ProcThree>();
-        epDef.PreProcessorList[4].ShouldBeOfType<ProcFour>();
-        epDef.PostProcessorList.Count.ShouldBe(5);
-        epDef.PostProcessorList[0].ShouldBeOfType<PostProcOne>();
-        epDef.PostProcessorList[1].ShouldBeOfType<PostProcTwo>();
-        epDef.PostProcessorList[2].ShouldBeOfType<PostProcRequest>();
-        epDef.PostProcessorList[3].ShouldBeOfType<PostProcThree>();
-        epDef.PostProcessorList[4].ShouldBeOfType<PostProcFour>();
+        await Assert.That(epDef.PreProcessorList).HasCount().EqualTo(5);
+        await Assert.That(epDef.PreProcessorList[0]).IsTypeOf<ProcOne>();
+        await Assert.That(epDef.PreProcessorList[1]).IsTypeOf<ProcTwo>();
+        await Assert.That(epDef.PreProcessorList[2]).IsTypeOf<ProcRequest>();
+        await Assert.That(epDef.PreProcessorList[3]).IsTypeOf<ProcThree>();
+        await Assert.That(epDef.PreProcessorList[4]).IsTypeOf<ProcFour>();
+        
+        await Assert.That(epDef.PostProcessorList).HasCount().EqualTo(5);
+        await Assert.That(epDef.PostProcessorList[0]).IsTypeOf<PostProcOne>();
+        await Assert.That(epDef.PostProcessorList[1]).IsTypeOf<PostProcTwo>();
+        await Assert.That(epDef.PostProcessorList[2]).IsTypeOf<PostProcRequest>();
+        await Assert.That(epDef.PostProcessorList[3]).IsTypeOf<PostProcThree>();
+        await Assert.That(epDef.PostProcessorList[4]).IsTypeOf<PostProcFour>();
     }
 
-    [Fact]
-    public void ServiceResolvedProcessorOrder()
+    [Test]
+    public async Task ServiceResolvedProcessorOrder()
     {
         var epDef = WireUpProcessorEndpoint();
 
@@ -126,18 +126,19 @@ public class EndpointDataTests
         epDef.PostProcessor<PostProcThree>(Order.After);
         epDef.PostProcessor<PostProcFour>(Order.After);
 
-        epDef.PreProcessorList.Count.ShouldBe(5);
-        epDef.PreProcessorList[0].ShouldBeOfType<ProcOne>();
-        epDef.PreProcessorList[1].ShouldBeOfType<ProcTwo>();
-        epDef.PreProcessorList[2].ShouldBeOfType<ProcRequest>();
-        epDef.PreProcessorList[3].ShouldBeOfType<ProcThree>();
-        epDef.PreProcessorList[4].ShouldBeOfType<ProcFour>();
-        epDef.PostProcessorList.Count.ShouldBe(5);
-        epDef.PostProcessorList[0].ShouldBeOfType<PostProcOne>();
-        epDef.PostProcessorList[1].ShouldBeOfType<PostProcTwo>();
-        epDef.PostProcessorList[2].ShouldBeOfType<PostProcRequest>();
-        epDef.PostProcessorList[3].ShouldBeOfType<PostProcThree>();
-        epDef.PostProcessorList[4].ShouldBeOfType<PostProcFour>();
+        await Assert.That(epDef.PreProcessorList).HasCount().EqualTo(5);
+        await Assert.That(epDef.PreProcessorList[0]).IsTypeOf<ProcOne>();
+        await Assert.That(epDef.PreProcessorList[1]).IsTypeOf<ProcTwo>();
+        await Assert.That(epDef.PreProcessorList[2]).IsTypeOf<ProcRequest>();
+        await Assert.That(epDef.PreProcessorList[3]).IsTypeOf<ProcThree>();
+        await Assert.That(epDef.PreProcessorList[4]).IsTypeOf<ProcFour>();
+        
+        await Assert.That(epDef.PostProcessorList).HasCount().EqualTo(5);
+        await Assert.That(epDef.PostProcessorList[0]).IsTypeOf<PostProcOne>();
+        await Assert.That(epDef.PostProcessorList[1]).IsTypeOf<PostProcTwo>();
+        await Assert.That(epDef.PostProcessorList[2]).IsTypeOf<PostProcRequest>();
+        await Assert.That(epDef.PostProcessorList[3]).IsTypeOf<PostProcThree>();
+        await Assert.That(epDef.PostProcessorList[4]).IsTypeOf<PostProcFour>();
     }
 }
 

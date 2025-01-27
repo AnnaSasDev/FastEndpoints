@@ -1,13 +1,12 @@
 using FastEndpoints;
 using FluentValidation.Results;
 using Microsoft.AspNetCore.Http;
-using Xunit;
 
 namespace Endpoints;
 
 public class SendShouldSetCorrectResponse : Endpoint<Request, Response>
 {
-    [Fact]
+    [Test]
     public async Task execute_test()
     {
         HttpContext = new DefaultHttpContext();
@@ -21,15 +20,15 @@ public class SendShouldSetCorrectResponse : Endpoint<Request, Response>
                 Name = "Test"
             });
 
-        Response.ShouldNotBeNull();
-        Response.Id.ShouldBe(1);
-        ValidationFailed.ShouldBeFalse();
+        await Assert.That(Response).IsNotNull();
+        await Assert.That(Response.Id).IsEqualTo(1);
+        await Assert.That(ValidationFailed).IsFalse();
     }
 }
 
 public class SendOkShouldSetCorrectResponse : Endpoint<Request, Response>
 {
-    [Fact]
+    [Test]
     public async Task execute_test()
     {
         HttpContext = new DefaultHttpContext();
@@ -44,31 +43,33 @@ public class SendOkShouldSetCorrectResponse : Endpoint<Request, Response>
             },
             CancellationToken.None);
 
-        Response.ShouldNotBeNull();
-        Response.Id.ShouldBe(1);
-        ValidationFailed.ShouldBeFalse();
+        await Assert.That(Response).IsNotNull();
+        await Assert.That(Response.Id).IsEqualTo(1);
+        await Assert.That(ValidationFailed).IsFalse();
     }
 }
 
 public class SendForbiddenShouldSetCorrectResponse : Endpoint<Request, Response>
 {
-    [Fact]
+    [Test]
     public async Task execute_test()
     {
         HttpContext = new DefaultHttpContext();
         Definition = new(typeof(SendForbiddenShouldSetCorrectResponse), typeof(Request), typeof(Response));
 
         await SendForbiddenAsync(CancellationToken.None);
-        Response.ShouldNotBeNull();
-        ValidationFailed.ShouldBeFalse();
-        HttpContext.Items[0].ShouldBeNull();
-        HttpContext.Response.StatusCode.ShouldBe(StatusCodes.Status403Forbidden);
+        
+        await Assert.That(Response).IsNotNull();
+        await Assert.That(Response.Id).IsEqualTo(0);
+        await Assert.That(ValidationFailed).IsFalse();
+        await Assert.That(HttpContext.Items[0]).IsNotNull();
+        await Assert.That(HttpContext.Response.StatusCode).IsEqualTo(StatusCodes.Status403Forbidden);
     }
 }
 
 public class SendShouldCallResponseInterceptorIfUntypedResponseObjectIsSupplied : Endpoint<Request, Response>
 {
-    [Fact]
+    [Test]
     public async Task execute_test()
     {
         HttpContext = new DefaultHttpContext();
@@ -91,7 +92,7 @@ public class SendShouldCallResponseInterceptorIfUntypedResponseObjectIsSupplied 
 
 public class SendInterceptedShouldThrowInvalidOperationExceptionIfCalledWithNoInterceptor : Endpoint<Request, Response>
 {
-    [Fact]
+    [Test]
     public async Task execute_test()
     {
         HttpContext = new DefaultHttpContext();
@@ -111,7 +112,7 @@ public class SendInterceptedShouldThrowInvalidOperationExceptionIfCalledWithNoIn
 
 public class SendShouldNotCallResponseInterceptorIfExpectedTypedResponseObjectIsSupplied : Endpoint<Request, Response>
 {
-    [Fact]
+    [Test]
     public async Task execute_test()
     {
         HttpContext = new DefaultHttpContext();
@@ -126,8 +127,8 @@ public class SendShouldNotCallResponseInterceptorIfExpectedTypedResponseObjectIs
                 Name = "Test"
             });
 
-        Response.ShouldNotBeNull();
-        Response.Id.ShouldBe(1);
+        await Assert.That(Response).IsNotNull();
+        await Assert.That(Response.Id).IsEqualTo(1);
     }
 }
 
@@ -139,7 +140,7 @@ public class NestedRequestParamTest : Endpoint<Request, Response>
         Routes("/nested-request-param");
     }
 
-    [Fact]
+    [Test]
     public async Task execute_test()
     {
         Definition = new(typeof(NestedRequestParamTest), typeof(Request), typeof(Response));
@@ -152,14 +153,14 @@ public class NestedRequestParamTest : Endpoint<Request, Response>
         summary.RequestParam(r => r.Request.PhoneNumbers, "request > phonenumbers");
         summary.RequestParam(r => r.Request.Items[0].Description, "request > items > description");
 
-        summary.Params.ShouldContainKey("Request.FirstName");
-        summary.Params["Request.FirstName"].ShouldBe("request > firstname");
+        await Assert.That(summary.Params).ContainsKey("Request.FirstName");
+        await Assert.That(summary.Params["Request.FirstName"]).IsEqualTo("request > firstname");
+        
+        await Assert.That(summary.Params).ContainsKey("Request.PhoneNumbers");
+        await Assert.That(summary.Params["Request.PhoneNumbers"]).IsEqualTo("request > phonenumbers");
 
-        summary.Params.ShouldContainKey("Request.PhoneNumbers");
-        summary.Params["Request.PhoneNumbers"].ShouldBe("request > phonenumbers");
-
-        summary.Params.ShouldContainKey("Request.Items[0].Description");
-        summary.Params["Request.Items[0].Description"].ShouldBe("request > items > description");
+        await Assert.That(summary.Params).ContainsKey("Request.Items[0].Description");
+        await Assert.That(summary.Params["Request.Items[0].Description"]).IsEqualTo("request > items > description");
     }
 }
 

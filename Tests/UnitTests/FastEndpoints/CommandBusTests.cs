@@ -4,13 +4,12 @@ using Microsoft.Extensions.Logging;
 using TestCases.CommandBusTest;
 using TestCases.CommandHandlerTest;
 using Web.Services;
-using Xunit;
 
 namespace CommandBus;
 
 public class CommandBusTests
 {
-    [Fact]
+    [Test]
     public async Task AbilityToFakeTheCommandHandler()
     {
         Factory.RegisterTestServices(_ => { });
@@ -25,10 +24,10 @@ public class CommandBusTests
 
         var result = await command.ExecuteAsync();
 
-        Assert.Equal("Fake Result", result);
+        await Assert.That(result).IsEqualTo("Fake Result");
     }
 
-    [Fact]
+    [Test]
     public async Task CommandExecutionWorks()
     {
         Factory.RegisterTestServices(_ => { });
@@ -38,10 +37,10 @@ public class CommandBusTests
 
         var res = await handler.ExecuteAsync(command, default);
 
-        res.ShouldBe("a b");
+        await Assert.That(res).IsEqualTo("a b");
     }
 
-    [Fact]
+    [Test]
     public async Task CommandHandlerAddsErrors()
     {
         Factory.RegisterTestServices(_ => { });
@@ -55,15 +54,15 @@ public class CommandBusTests
         }
         catch (ValidationFailureException x)
         {
-            x.Failures!.Count().ShouldBe(2);
-            x.Failures!.First().PropertyName.ShouldBe("FirstName");
-            x.Failures!.Last().PropertyName.ShouldBe("GeneralErrors");
+            await Assert.That(x.Failures).HasCount().EqualTo(2);
+            await Assert.That(x.Failures!.First().PropertyName).IsEqualTo("FirstName");
+            await Assert.That(x.Failures!.Last().PropertyName).IsEqualTo("GeneralErrors");
         }
 
-        handler.ValidationFailures.Count.ShouldBe(2);
+        await Assert.That(handler.ValidationFailures).HasCount().EqualTo(2);
     }
 
-    [Fact]
+    [Test]
     public async Task CommandHandlerExecsWithoutErrors()
     {
         Factory.RegisterTestServices(_ => { });
@@ -73,6 +72,6 @@ public class CommandBusTests
 
         await handler.ExecuteAsync(command);
 
-        handler.ValidationFailures.Count.ShouldBe(0);
+        await Assert.That(handler.ValidationFailures).HasCount().EqualTo(0);
     }
 }

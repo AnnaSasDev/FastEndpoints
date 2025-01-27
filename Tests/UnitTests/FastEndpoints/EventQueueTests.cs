@@ -4,13 +4,12 @@ using Grpc.Core;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Xunit;
 
 namespace EventQueue;
 
 public class EventQueueTests
 {
-    [Fact]
+    [Test]
     public async Task subscriber_storage_queue_and_dequeue()
     {
         var sut = new InMemoryEventSubscriberStorage();
@@ -43,25 +42,28 @@ public class EventQueueTests
         await sut.StoreEventAsync(record2, default);
 
         var r1x = await sut.GetNextBatchAsync(new() { SubscriberID = record1.SubscriberID });
-        r1x!.Single().Event.ShouldBe(record1.Event);
+        await Assert.That(r1x).HasSingleItem();
+        await Assert.That(r1x.Single().Event).IsEqualTo(record1.Event);
 
         var r2x = await sut.GetNextBatchAsync(new() { SubscriberID = record1.SubscriberID });
-        r2x!.Single().Event.ShouldBe(record2.Event);
+        await Assert.That(r2x).HasSingleItem();
+        await Assert.That(r2x.Single().Event).IsEqualTo(record2.Event);
 
         await sut.StoreEventAsync(record3, default);
         await Task.Delay(100);
 
         var r3 = await sut.GetNextBatchAsync(new() { SubscriberID = record3.SubscriberID });
-        r3!.Single().Event.ShouldBe(record3.Event);
+        await Assert.That(r3).HasSingleItem();
+        await Assert.That(r3.Single().Event).IsEqualTo(record3.Event);
 
         var r3x = await sut.GetNextBatchAsync(new() { SubscriberID = record2.SubscriberID });
-        r3x.Any().ShouldBeFalse();
+        await Assert.That(r3x).IsEmpty();
 
         var r4x = await sut.GetNextBatchAsync(new() { SubscriberID = record3.SubscriberID });
-        r4x.Any().ShouldBeFalse();
+        await Assert.That(r4x).IsEmpty();
     }
 
-    [Fact]
+    [Test]
     public async Task subscriber_storage_queue_overflow()
     {
         var sut = new InMemoryEventSubscriberStorage();
@@ -82,13 +84,12 @@ public class EventQueueTests
                 await sut.StoreEventAsync(r, default);
             else
             {
-                var func = async () => await sut.StoreEventAsync(r, default);
-                await func.ShouldThrowAsync<OverflowException>();
+                await Assert.ThrowsAsync<OverflowException>(async () => await sut.StoreEventAsync(r, default));
             }
         }
     }
 
-    [Fact]
+    [Test]
     public async Task event_hub_publisher_mode()
     {
         var services = new ServiceCollection();
@@ -113,10 +114,10 @@ public class EventQueueTests
         while (writer.Responses.Count < 1)
             await Task.Delay(100);
 
-        writer.Responses[0].EventID.ShouldBe(123);
+        await Assert.That(writer.Responses[0].EventID).IsEqualTo(123);
     }
 
-    [Fact]
+    [Test]
     public async Task event_hub_broker_mode()
     {
         var services = new ServiceCollection();
@@ -140,7 +141,7 @@ public class EventQueueTests
         while (writer.Responses.Count < 1)
             await Task.Delay(100);
 
-        writer.Responses[0].EventID.ShouldBe(321);
+        await Assert.That(writer.Responses[0].EventID).IsEqualTo(321);
     }
 
     class TestEvent : IEvent
