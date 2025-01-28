@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Http;
 
 namespace Binding;
 
-public class MaxRequestBodyLimitTests : IAsyncLifetime
+public class MaxRequestBodyLimitTests
 {
     readonly WebApplication _app;
 
@@ -27,7 +27,7 @@ public class MaxRequestBodyLimitTests : IAsyncLifetime
     public async ValueTask InitializeAsync()
         => await _app.StartAsync();
 
-    [Fact, Trait("ExcludeInCiCd", "Yes")]
+    [Test, Property("ExcludeInCiCd", "Yes")]
     public async Task Error_Response_When_Max_Req_Size_Exceeded()
     {
         var baseUrl = _app.Urls.First();
@@ -46,8 +46,8 @@ public class MaxRequestBodyLimitTests : IAsyncLifetime
         };
 
         var (rsp, res) = await client.POSTAsync<Endpoint, Request, ErrorResponse>(req, sendAsFormData: true);
-        rsp.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
-        res.Errors["formErrors"][0].ShouldBe("Request body too large. The max request body size is 100 bytes.");
+        await Assert.That(rsp.StatusCode).IsEqualTo(HttpStatusCode.BadRequest);
+        await Assert.That(res.Errors["formErrors"][0]).IsEqualTo("Request body too large. The max request body size is 100 bytes.");
     }
 
     sealed class Request

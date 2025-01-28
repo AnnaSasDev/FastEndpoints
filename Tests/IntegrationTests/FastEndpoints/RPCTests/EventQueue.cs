@@ -4,7 +4,7 @@ namespace RemoteProcedureCalls;
 
 public class EventQueue(Sut f) : RpcTestBase(f)
 {
-    [Fact]
+    [Test]
     public async Task Event_Queue()
     {
         for (var i = 0; i < 100; i++)

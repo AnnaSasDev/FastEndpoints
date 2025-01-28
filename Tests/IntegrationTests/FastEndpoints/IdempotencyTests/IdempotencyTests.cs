@@ -7,26 +7,26 @@ namespace IdempotencyTests;
 
 public class IdempotencyTests(Sut App) : TestBase<Sut>
 {
-    [Fact]
+    [Test]
     public async Task Header_Not_Present()
     {
         var url = $"{Endpoint.BaseRoute}/123";
         var req = new HttpRequestMessage(HttpMethod.Get, url);
         var res = await App.Client.SendAsync(req, Cancellation);
-        res.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+        await Assert.That(res.StatusCode).IsEqualTo(HttpStatusCode.BadRequest);
     }
 
-    [Fact]
+    [Test]
     public async Task Multiple_Headers()
     {
         var url = $"{Endpoint.BaseRoute}/123";
         var req = new HttpRequestMessage(HttpMethod.Get, url);
         req.Headers.Add("Idempotency-Key", ["1", "2"]);
         var res = await App.Client.SendAsync(req, Cancellation);
-        res.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+        await Assert.That(res.StatusCode).IsEqualTo(HttpStatusCode.BadRequest);
     }
 
-    [Fact]
+    [Test]
     public async Task MultiPart_Form_Request()
     {
         var idmpKey = Guid.NewGuid().ToString();
@@ -48,15 +48,15 @@ public class IdempotencyTests(Sut App) : TestBase<Sut>
 
         //initial request - uncached response
         var res1 = await App.Client.SendAsync(req1, Cancellation);
-        res1.IsSuccessStatusCode.ShouldBeTrue();
-        res1.Headers.Any(h => h.Key == "Idempotency-Key" && h.Value.First() == idmpKey).ShouldBeTrue();
+        await Assert.That(res1.IsSuccessStatusCode).IsTrue();
+        await Assert.That(res1.Headers.Any(h => h.Key == "Idempotency-Key" && h.Value.First() == idmpKey)).IsTrue();
 
         var rsp1 = await res1.Content.ReadFromJsonAsync<Response>(Cancellation);
-        rsp1.ShouldNotBeNull();
-        rsp1!.Id.ShouldBe("321");
+        await Assert.That(rsp1).IsNotNull();
+        await Assert.That(rsp1!.Id).IsEqualTo("321");
 
         var ticks = rsp1.Ticks;
-        ticks.ShouldBeGreaterThan(0);
+        await Assert.That(ticks).IsGreaterThan(0);
 
         //duplicate request - cached response
         var req2 = new HttpRequestMessage(HttpMethod.Get, url);
@@ -64,11 +64,11 @@ public class IdempotencyTests(Sut App) : TestBase<Sut>
         req2.Headers.Add("Idempotency-Key", idmpKey);
 
         var res2 = await App.Client.SendAsync(req2, Cancellation);
-        res2.IsSuccessStatusCode.ShouldBeTrue();
+        await Assert.That(res2.IsSuccessStatusCode).IsTrue();
         var rsp2 = await res2.Content.ReadFromJsonAsync<Response>(Cancellation);
-        rsp2.ShouldNotBeNull();
-        rsp2!.Id.ShouldBe("321");
-        rsp2.Ticks.ShouldBe(ticks);
+        await Assert.That(rsp2).IsNotNull();
+        await Assert.That(rsp2!.Id).IsEqualTo("321");
+        await Assert.That(rsp2.Ticks).IsEqualTo(ticks);
 
         //changed request - uncached response
         var req3 = new HttpRequestMessage(HttpMethod.Get, url);
@@ -77,15 +77,15 @@ public class IdempotencyTests(Sut App) : TestBase<Sut>
         req3.Headers.Add("Idempotency-Key", idmpKey);
 
         var res3 = await App.Client.SendAsync(req3, Cancellation);
-        res3.IsSuccessStatusCode.ShouldBeTrue();
+        await Assert.That(res3.IsSuccessStatusCode).IsTrue();
 
         var rsp3 = await res3.Content.ReadFromJsonAsync<Response>(Cancellation);
-        rsp3.ShouldNotBeNull();
-        rsp3!.Id.ShouldBe("321");
-        rsp3.Ticks.ShouldNotBe(ticks);
+        await Assert.That(rsp3).IsNotNull();
+        await Assert.That(rsp3!.Id).IsEqualTo("321");
+        await Assert.That(rsp3.Ticks).IsGreaterThan(ticks);
     }
 
-    [Fact]
+    [Test]
     public async Task Json_Body_Request()
     {
         var idmpKey = Guid.NewGuid().ToString();
@@ -94,22 +94,22 @@ public class IdempotencyTests(Sut App) : TestBase<Sut>
 
         //initial request - uncached response
         var (res1, rsp1) = await client.GETAsync<Endpoint, Request, Response>(req);
-        res1.IsSuccessStatusCode.ShouldBeTrue();
+        await Assert.That(res1.IsSuccessStatusCode).IsTrue();
 
         var ticks = rsp1.Ticks;
-        ticks.ShouldBeGreaterThan(0);
+        await Assert.That(ticks).IsGreaterThan(0);
 
         //duplicate request - cached response
         var (res2, rsp2) = await client.GETAsync<Endpoint, Request, Response>(req);
-        res2.IsSuccessStatusCode.ShouldBeTrue();
+        await Assert.That(res2.IsSuccessStatusCode).IsTrue();
 
-        rsp2.Ticks.ShouldBe(ticks);
+        await Assert.That(rsp2.Ticks).IsEqualTo(ticks); 
 
         //changed request - uncached response
         req.Content = "bye"; //the change
         var (res3, rsp3) = await client.GETAsync<Endpoint, Request, Response>(req);
-        res3.IsSuccessStatusCode.ShouldBeTrue();
+        await Assert.That(res3.IsSuccessStatusCode).IsTrue();
 
-        rsp3.Ticks.ShouldNotBe(ticks);
+        await Assert.That(rsp3.Ticks).IsEqualTo(ticks);
     }
 }

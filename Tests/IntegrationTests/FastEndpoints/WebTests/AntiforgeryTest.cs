@@ -4,16 +4,17 @@ using TestClass = TestCases.AntiforgeryTest;
 
 namespace Int.FastEndpoints.WebTests;
 
-public class AntiforgeryTest(Sut App) : TestBase<Sut>
+[ClassDataSource<Sut>]
+public class AntiforgeryTest(Sut App) : TestBase
 {
-    [Fact]
+    [Test]
     public async Task Html_Form_Renders_With_Af_Token()
     {
         var content = await App.GuestClient.GetStringAsync($"{App.GuestClient.BaseAddress}api/{TestClass.Routes.GetFormHtml}", Cancellation);
-        content.ShouldContain("__RequestVerificationToken");
+        await Assert.That(content).Contains("__RequestVerificationToken");
     }
 
-    [Fact]
+    [Test]
     public async Task Af_Middleware_Blocks_Request_With_Bad_Token()
     {
         var form = new MultipartFormDataContent
@@ -30,13 +31,16 @@ public class AntiforgeryTest(Sut App) : TestBase<Sut>
                       },
                       Cancellation);
 
-        rsp.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+        await Assert.That(rsp.StatusCode).IsEqualTo(HttpStatusCode.BadRequest);
         var errResponse = await rsp.Content.ReadFromJsonAsync<ErrorResponse>(Cancellation);
-        errResponse!.Errors.Count.ShouldBe(1);
-        errResponse.Errors["generalErrors"][0].ShouldBe("Anti-forgery token is invalid!");
+        await Assert.That(errResponse).IsNotNull();
+        await Assert.That(errResponse!.Errors)
+                    .ContainsKey("generalErrors")
+                    .And.HasCount().EqualTo(1);
+        await Assert.That(errResponse.Errors["generalErrors"][0]).IsEqualTo("Anti-forgery token is invalid!");
     }
 
-    [Fact]
+    [Test]
     public async Task Af_Token_Verification_Succeeds()
     {
         var (_, tokenRsp) = await App.GuestClient.GETAsync<TestClass.GetAfTokenEndpoint, TestClass.TokenResponse>();
@@ -55,8 +59,8 @@ public class AntiforgeryTest(Sut App) : TestBase<Sut>
                       },
                       Cancellation);
 
-        rsp.IsSuccessStatusCode.ShouldBeTrue();
+        await Assert.That(rsp.IsSuccessStatusCode).IsTrue();
         var content = await rsp.Content.ReadAsStringAsync(Cancellation);
-        content.ShouldContain("antiforgery success");
+        await Assert.That(content).IsNotEmpty().And.Contains("antiforgery success");
     }
 }

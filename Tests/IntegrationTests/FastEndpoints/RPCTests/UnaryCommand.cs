@@ -4,7 +4,7 @@ namespace RemoteProcedureCalls;
 
 public class UnaryCommand(Sut f) : RpcTestBase(f)
 {
-    [Fact]
+    [Test]
     public async Task Unary()
     {
         var command = new SomeCommand
@@ -18,7 +18,7 @@ public class UnaryCommand(Sut f) : RpcTestBase(f)
         res.ShouldBe("johnny lawrence");
     }
 
-    [Fact]
+    [Test]
     public async Task Unary_Echo()
     {
         var command = new EchoCommand

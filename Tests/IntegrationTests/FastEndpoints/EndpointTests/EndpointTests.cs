@@ -7,9 +7,10 @@ using TestCases.Routing;
 
 namespace EndpointTests;
 
-public class EndpointTests(Sut App) : TestBase<Sut>
+[ClassDataSource<Sut>]
+public class EndpointTests(Sut App) : TestBase
 {
-    [Fact]
+    [Test]
     public async Task EmptyRequest()
     {
         var endpointUrl = IEndpoint.TestURLFor<EmptyRequestEndpoint>();
@@ -26,11 +27,10 @@ public class EndpointTests(Sut App) : TestBase<Sut>
         };
 
         var response = await App.AdminClient.SendAsync(message, Cancellation);
-
-        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
     }
 
-    [Fact]
+    [Test]
     public async Task OnBeforeOnAfterValidation()
     {
         var (rsp, res) = await App.AdminClient.POSTAsync<
@@ -43,11 +43,11 @@ public class EndpointTests(Sut App) : TestBase<Sut>
                                  Verb = Http.DELETE
                              });
 
-        rsp.StatusCode.ShouldBe(HttpStatusCode.OK);
-        res.Host.ShouldBe("localhost");
+        await Assert.That(rsp.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(res.Host).IsEqualTo("localhost");
     }
 
-    [Fact]
+    [Test]
     public async Task GlobalRoutePrefixOverride()
     {
         using var stringContent = new StringContent("this is the body content");
@@ -57,11 +57,12 @@ public class EndpointTests(Sut App) : TestBase<Sut>
 
         var res = await rsp.Content.ReadFromJsonAsync<TestCases.PlainTextRequestTest.Response>(Cancellation);
 
-        res!.BodyContent.ShouldBe("this is the body content");
-        res.Id.ShouldBe(12345);
+        await Assert.That(res).IsNotNull();
+        await Assert.That(res!.BodyContent).IsEqualTo("this is the body content");
+        await Assert.That(res.Id).IsEqualTo(12345);
     }
 
-    [Fact]
+    [Test]
     public async Task HydratedTestUrlGeneratorWorksForSupportedVerbs()
     {
         // Arrange
@@ -94,45 +95,43 @@ public class EndpointTests(Sut App) : TestBase<Sut>
 
         // Assert
         var expectedPath = "/api/test/hydrated-test-url-generator-test/123/00000000-0000-0000-0000-000000000000/string/null/{fromClaim}/{fromHeader}/True";
-        getResp.Result.ShouldBeEquivalentTo(expectedPath);
-        postResp.Result.ShouldBeEquivalentTo(expectedPath);
-        putResp.Result.ShouldBeEquivalentTo(expectedPath);
-        patchResp.Result.ShouldBeEquivalentTo(expectedPath);
-        deleteResp.Result.ShouldBeEquivalentTo(expectedPath);
-    }
+        await Assert.That(getResp.Result).IsEqualTo(expectedPath);
+        await Assert.That(postResp.Result).IsEqualTo(expectedPath);
+        await Assert.That(putResp.Result).IsEqualTo(expectedPath);
+        await Assert.That(patchResp.Result).IsEqualTo(expectedPath);
+        await Assert.That(deleteResp.Result).IsEqualTo(expectedPath);
+        }
 
-    [Fact]
+    [Test]
     public async Task NonOptionalRouteParamThrowsExceptionIfParamIsNull()
     {
         var request = new NonOptionalRouteParamTest.Request(null!);
 
         var act = async () => await App.Client.POSTAsync<NonOptionalRouteParamTest, NonOptionalRouteParamTest.Request>(request);
 
-        var ex = await Should.ThrowAsync<InvalidOperationException>(act);
-        ex.Message.ShouldBe("Route param value missing for required param [{UserId}].");
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(act);
+        await Assert.That(ex.Message).IsEqualTo("Route param value missing for required param [{UserId}].");
     }
 
-    [Fact]
+    [Test]
     public async Task OptionalRouteParamWithNullValueReturnsDefaultValue()
     {
         var request = new OptionalRouteParamTest.Request(null);
 
         var (rsp, res) = await App.Client.POSTAsync<OptionalRouteParamTest, OptionalRouteParamTest.Request, string>(request);
 
-        rsp.IsSuccessStatusCode.ShouldBeTrue();
-
-        res.ShouldBe("default offer");
+        await Assert.That(rsp.IsSuccessStatusCode).IsTrue();
+        await Assert.That(res).IsEqualTo("default offer");
     }
 
-    [Fact]
+    [Test]
     public async Task OptionalRouteParamWithValueReturnsSentValue()
     {
         var request = new OptionalRouteParamTest.Request("blah blah!");
 
         var (rsp, res) = await App.Client.POSTAsync<OptionalRouteParamTest, OptionalRouteParamTest.Request, string>(request);
 
-        rsp.IsSuccessStatusCode.ShouldBeTrue();
-
-        res.ShouldBe("blah blah!");
+        await Assert.That(rsp.IsSuccessStatusCode).IsTrue();
+        await Assert.That(res).IsEqualTo("blah blah!");
     }
 }

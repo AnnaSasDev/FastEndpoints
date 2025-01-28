@@ -36,7 +36,7 @@ public class CollectionFixtureTests
     [Collection(CollectionA.Name)]
     public class TestClassA1(CollectionAppFixture App) : TestBase
     {
-        [Fact]
+        [Test]
         public void Test_Method_1()
         {
             App.Id.ShouldBe(CollectionAppFixture.Default.Reverse().ToString());
@@ -47,7 +47,7 @@ public class CollectionFixtureTests
     [Collection(CollectionA.Name)]
     public class TestClassA2(CollectionAppFixture App) : TestBase
     {
-        [Fact]
+        [Test]
         public void Test_Method_2()
         {
             App.Id.ShouldBe(CollectionAppFixture.Default.Reverse().ToString());
@@ -66,7 +66,7 @@ public class CollectionFixtureTests
     [Collection(CollectionB.Name)]
     public class TestClassB1(CollectionAppFixture App) : TestBase
     {
-        [Fact]
+        [Test]
         public void Test_Method_1()
         {
             App.Id.ShouldBe(CollectionAppFixture.Default.Reverse().ToString());
@@ -77,7 +77,7 @@ public class CollectionFixtureTests
     [Collection(CollectionB.Name)]
     public class TestClassB2(CollectionAppFixture App) : TestBase
     {
-        [Fact]
+        [Test]
         public void Test_Method_2()
         {
             App.Id.ShouldBe(CollectionAppFixture.Default.Reverse().ToString());

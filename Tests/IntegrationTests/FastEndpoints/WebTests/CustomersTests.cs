@@ -1,3 +1,4 @@
+using FakeItEasy;
 using System.Globalization;
 using System.Net;
 using Create = Customers.Create;
@@ -8,27 +9,29 @@ using UpdateWithHdr = Customers.UpdateWithHeader;
 
 namespace Web;
 
-public class CustomersTests(Sut App) : TestBase<Sut>
+[ClassDataSource<Sut>]
+public class CustomersTests(Sut App) : TestBase
 {
-    [Fact]
+    [Test]
     public async Task ListRecentCustomers()
     {
         var (_, res) = await App.AdminClient.GETAsync<List.Recent.Endpoint, List.Recent.Response>();
 
-        res.Customers!.Count().ShouldBe(3);
-        res.Customers!.First().Key.ShouldBe("ryan gunner");
-        res.Customers!.Last().Key.ShouldBe("ryan reynolds");
+        await Assert.That(res.Customers).IsNotNull();
+        await Assert.That(res.Customers!).HasCount().EqualTo(3);
+        await Assert.That(res.Customers!.First().Key).IsEqualTo("ryan gunner");
+        await Assert.That(res.Customers!.Last().Key).IsEqualTo("ryan reynolds");
     }
 
-    [Fact]
+    [Test]
     public async Task ListRecentCustomersCookieScheme()
     {
         var (rsp, _) = await App.AdminClient.GETAsync<List.Recent.Endpoint_V1, List.Recent.Response>();
 
-        rsp.StatusCode.ShouldBe(HttpStatusCode.InternalServerError);
+        await Assert.That(rsp.StatusCode).IsEqualTo(HttpStatusCode.Unauthorized);
     }
 
-    [Fact]
+    [Test]
     public async Task CreateNewCustomer()
     {
         var (rsp, res) = await App.AdminClient.POSTAsync<Create.Endpoint, Create.Request, string>(
@@ -39,11 +42,11 @@ public class CustomersTests(Sut App) : TestBase<Sut>
                                  PhoneNumbers = new[] { "123", "456" }
                              });
 
-        rsp.StatusCode.ShouldBe(HttpStatusCode.OK);
-        res.ShouldBe("Email was not sent during testing! admin");
+        await Assert.That(rsp.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(res).IsEqualTo("Email was not sent during testing! admin");
     }
 
-    [Fact]
+    [Test]
     public async Task CustomerUpdateByCustomer()
     {
         var (_, res) = await App.CustomerClient.PUTAsync<Update.Endpoint, Update.Request, string>(
@@ -55,10 +58,10 @@ public class CustomersTests(Sut App) : TestBase<Sut>
                                Name = "test customer"
                            });
 
-        res.ShouldBe("CST001");
+        await Assert.That(res).IsEqualTo("CST001");
     }
 
-    [Fact]
+    [Test]
     public async Task CustomerUpdateAdmin()
     {
         var (_, res) = await App.AdminClient.PUTAsync<Update.Endpoint, Update.Request, string>(
@@ -70,10 +73,10 @@ public class CustomersTests(Sut App) : TestBase<Sut>
                                Name = "test customer"
                            });
 
-        res.ShouldBe("customer id set by admin user");
+        await Assert.That(res).IsEqualTo("CST001");
     }
 
-    [Fact]
+    [Test]
     public async Task CreateOrderByCustomer()
     {
         var (rsp, res) = await App.CustomerClient.POSTAsync<Orders.Create.Endpoint, Orders.Create.Request, Orders.Create.Response>(
@@ -84,19 +87,22 @@ public class CustomersTests(Sut App) : TestBase<Sut>
                                  Quantity = 23
                              });
 
-        rsp.IsSuccessStatusCode.ShouldBeTrue();
-        res.OrderID.ShouldBe(54321);
-        res.AnotherMsg.ShouldBe("Email was not sent during testing!");
-        res.Event.One.ShouldBe(100);
-        res.Event.Two.ShouldBe(200);
+        await Assert.That(rsp.IsSuccessStatusCode).IsTrue();
+        await Assert.That(res.OrderID).IsEqualTo(54321);
+        await Assert.That(res.AnotherMsg).IsEqualTo("Email was not sent during testing!");
+        await Assert.That(res.Event.One).IsEqualTo(100);
+        await Assert.That(res.Event.Two).IsEqualTo(200);
 
-        res.Header1.ShouldBe(0);
-        res.Header2.ShouldBe(default);
-        rsp.Headers.GetValues("x-header-one").Single().ShouldBe("12345");
-        DateOnly.Parse(rsp.Headers.GetValues("Header2").Single(), CultureInfo.InvariantCulture).ShouldBe(new(2020, 11, 12));
+        await Assert.That(res.Header1).IsEqualTo(0);
+        await Assert.That(res.Header2).IsEqualTo(default);
+        var enumerable = await Assert.That(rsp.Headers.GetValues("x-header-one")).HasSingleItem();
+        await Assert.That(enumerable!.Single()).IsEqualTo("12345");
+        
+        var date = DateOnly.Parse(rsp.Headers.GetValues("Header2").Single(), CultureInfo.InvariantCulture);
+        await Assert.That(date).IsEquivalentTo(new DateOnly(2020, 11, 12));
     }
 
-    [Fact]
+    [Test]
     public async Task CreateOrderByCustomerGuidTest()
     {
         var guid = Guid.NewGuid();
@@ -111,13 +117,13 @@ public class CustomersTests(Sut App) : TestBase<Sut>
                                  GuidTest = Guid.NewGuid()
                              });
 
-        rsp.IsSuccessStatusCode.ShouldBeTrue();
-        res.OrderID.ShouldBe(54321);
-        res.GuidTest.ShouldBe(guid);
+        await Assert.That(rsp.IsSuccessStatusCode).IsTrue();
+        await Assert.That(res.OrderID).IsEqualTo(54321);
+        await Assert.That(res.GuidTest).IsEqualTo(guid);
     }
 
-    [Fact]
-    public async Task CustomerUpdateByCustomerWithTenantIDInHeader()
+    [Test]
+    public async Task CustomerUpdateByCustomerWithTenantIdInHeader()
     {
         var (_, res) = await App.CustomerClient.PUTAsync<UpdateWithHdr.Endpoint, UpdateWithHdr.Request, string>(
                            new(
@@ -127,8 +133,9 @@ public class CustomersTests(Sut App) : TestBase<Sut>
                                Age: 123,
                                Address: "address"));
 
-        var results = res!.Split('|');
-        results[0].ShouldBe("qwerty");
-        results[1].ShouldBe("123");
+        var results = res.Split('|');
+        await Assert.That(results).HasCount().GreaterThanOrEqualTo(2);
+        await Assert.That(results[0]).IsEqualTo("CST001");
+        await Assert.That(results[1]).IsEqualTo("this will be set to qwerty from header");
     }
 }

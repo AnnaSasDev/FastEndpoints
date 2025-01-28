@@ -8,7 +8,7 @@ namespace Web;
 
 public class InventoryTests(Sut App) : TestBase<Sut>
 {
-    [Fact]
+    [Test]
     public async Task CreateProductFailValidation()
     {
         var (res, result) = await App.AdminClient.POSTAsync<Create.Endpoint, Create.Request, ErrorResponse>(
@@ -23,7 +23,7 @@ public class InventoryTests(Sut App) : TestBase<Sut>
         result.Errors.ShouldContainKey("modifiedBy");
     }
 
-    [Fact]
+    [Test]
     public async Task CreateProductFailBusinessLogic()
     {
         var (res, result) = await App.AdminClient.POSTAsync<Create.Endpoint, Create.Request, ErrorResponse>(
@@ -41,7 +41,7 @@ public class InventoryTests(Sut App) : TestBase<Sut>
         result.Errors.ShouldContainKey("price");
     }
 
-    [Fact]
+    [Test]
     public async Task CreateProductFailDuplicateItem()
     {
         var (res, result) = await App.AdminClient.POSTAsync<Create.Endpoint, Create.Request, ErrorResponse>(
@@ -59,7 +59,7 @@ public class InventoryTests(Sut App) : TestBase<Sut>
         result.Errors.ShouldContainKey("generalErrors");
     }
 
-    [Fact]
+    [Test]
     public async Task CreateProductFailNoPermission()
     {
         var (rsp, _) = await App.CustomerClient.PUTAsync<Update.Endpoint, Update.Request, Update.Response>(
@@ -74,7 +74,7 @@ public class InventoryTests(Sut App) : TestBase<Sut>
         rsp.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
     }
 
-    [Fact]
+    [Test]
     public async Task CreateProductSuccess()
     {
         var (res, result) = await App.AdminClient.POSTAsync<Create.Endpoint, Create.Request, Create.Response>(
@@ -91,7 +91,7 @@ public class InventoryTests(Sut App) : TestBase<Sut>
         result.ProductName.ShouldBe("Grape Juice");
     }
 
-    [Fact]
+    [Test]
     public async Task CreatedAtSuccess()
     {
         var (res, result) = await App.AdminClient.POSTAsync<Create.Endpoint, Create.Request, Create.Response>(
@@ -112,7 +112,7 @@ public class InventoryTests(Sut App) : TestBase<Sut>
         result.ProductName.ShouldBe("Grape Juice");
     }
 
-    [Fact]
+    [Test]
     public async Task CreatedAtSuccessFullUrl()
     {
         var (res, result) = await App.AdminClient.POSTAsync<Create.Endpoint, Create.Request, Create.Response>(
@@ -133,7 +133,7 @@ public class InventoryTests(Sut App) : TestBase<Sut>
         result.ProductName.ShouldBe("Grape Juice");
     }
 
-    [Fact]
+    [Test]
     public async Task ResponseCaching()
     {
         var (rsp1, res1) = await App.GuestClient.GETAsync<GetProduct.Endpoint, GetProduct.Response>();
@@ -148,7 +148,7 @@ public class InventoryTests(Sut App) : TestBase<Sut>
         res2.LastModified.ShouldBe(res1.LastModified);
     }
 
-    [Fact]
+    [Test]
     public async Task DeleteProductSuccess()
     {
         var res = await App.AdminClient.DELETEAsync<Delete.Endpoint, Delete.Request>(

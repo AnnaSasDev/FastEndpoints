@@ -6,7 +6,7 @@ public record FixtureId(string Id);
 
 public class TestServerTests
 {
-    [Fact]
+    [Test]
     public async Task Only_One_TestServer_Is_Created_Per_Fixture_Type()
     {
         var f1 = new FixtureA();

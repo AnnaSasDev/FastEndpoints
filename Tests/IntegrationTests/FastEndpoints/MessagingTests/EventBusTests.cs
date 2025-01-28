@@ -5,7 +5,7 @@ namespace Messaging;
 
 public class EventBusTests(Sut App) : TestBase<Sut>
 {
-    [Fact]
+    [Test]
     public async Task Fake_Handler_Execution()
     {
         var (rsp, _) = await App.Client.GETAsync<Endpoint, int>();
@@ -15,7 +15,7 @@ public class EventBusTests(Sut App) : TestBase<Sut>
         AnotherFakeEventHandler.Result.ShouldBe(102);
     }
 
-    [Fact]
+    [Test]
     public async Task EventHandling()
     {
         var event1 = new NewItemAddedToStock { ID = 1, Name = "one", Quantity = 10 };

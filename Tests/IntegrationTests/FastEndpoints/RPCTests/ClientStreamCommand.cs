@@ -4,7 +4,7 @@ namespace RemoteProcedureCalls;
 
 public class ClientStreamCommand(Sut f) : RpcTestBase(f)
 {
-    [Fact]
+    [Test]
     public async Task Client_Stream()
     {
         var input = GetDataStream();

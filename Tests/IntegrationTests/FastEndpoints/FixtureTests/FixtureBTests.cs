@@ -4,7 +4,7 @@ namespace FixtureTests;
 
 public class FixtureBTests(FixtureB sut) : TestBase<FixtureB>
 {
-    [Fact]
+    [Test]
     public async Task Actual_Email_Service_Is_Resolved()
     {
         var svc = sut.Services.GetRequiredService<IEmailService>();

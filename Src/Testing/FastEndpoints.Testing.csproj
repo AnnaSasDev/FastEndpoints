@@ -14,8 +14,8 @@
     <ItemGroup>
         <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing"/>
         <PackageReference Include="Bogus"/>
-        <PackageReference Include="xunit.v3"/>
         <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="All"/>
+        <PackageReference Include="TUnit" />
     </ItemGroup>
 
     <ItemGroup>

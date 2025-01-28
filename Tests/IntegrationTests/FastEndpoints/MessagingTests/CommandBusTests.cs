@@ -4,7 +4,7 @@ namespace Messaging;
 
 public class CommandBusTests(Sut App) : TestBase<Sut>
 {
-    [Fact]
+    [Test]
     public async Task Generic_Command_With_Result()
     {
         var (rsp, res) = await App.GuestClient.GETAsync<TestCases.CommandHandlerTest.GenericCmdEndpoint, IEnumerable<Guid>>();
@@ -13,7 +13,7 @@ public class CommandBusTests(Sut App) : TestBase<Sut>
         res.First().ShouldBe(Guid.Empty);
     }
 
-    [Fact]
+    [Test]
     public async Task Generic_Command_Without_Result()
     {
         var (rsp, res) = await App.GuestClient.GETAsync<TestCases.CommandHandlerTest.GenericCmdWithoutResultEndpoint, Guid>();
@@ -21,7 +21,7 @@ public class CommandBusTests(Sut App) : TestBase<Sut>
         res.ShouldBe(Guid.Empty);
     }
 
-    [Fact]
+    [Test]
     public async Task Command_Handler_Sends_Error_Response()
     {
         var res = await App.Client.GETAsync<TestCases.CommandHandlerTest.ConcreteCmdEndpoint, ErrorResponse>();
@@ -31,7 +31,7 @@ public class CommandBusTests(Sut App) : TestBase<Sut>
         res.Result.Errors["generalErrors"].Count.ShouldBe(2);
     }
 
-    [Fact]
+    [Test]
     public async Task Non_Concrete_Void_Command()
     {
         ICommand cmd = new VoidCommand
@@ -53,7 +53,7 @@ public class CommandBusTests(Sut App) : TestBase<Sut>
         TestCommandHandler.FullName.ShouldBe("x y zseeeee!");
     }
 
-    [Fact]
+    [Test]
     public async Task Void_Command_With_Test_Handler()
     {
         var (rsp, _) = await App.Client.GETAsync<Endpoint, string>();

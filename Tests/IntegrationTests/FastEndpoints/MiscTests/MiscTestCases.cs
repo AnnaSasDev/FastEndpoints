@@ -5,7 +5,7 @@ namespace Misc;
 
 public class MiscTestCases(Sut App) : TestBase<Sut>
 {
-    [Fact]
+    [Test]
     public async Task ThrottledGlobalResponse()
     {
         HttpResponseMessage? response = null;
@@ -29,7 +29,7 @@ public class MiscTestCases(Sut App) : TestBase<Sut>
         response.StatusCode.ShouldBe(HttpStatusCode.TooManyRequests);
     }
 
-    [Fact]
+    [Test]
     public async Task NotThrottledGlobalResponse()
     {
         HttpResponseMessage response = default!;
@@ -51,7 +51,7 @@ public class MiscTestCases(Sut App) : TestBase<Sut>
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
     }
 
-    [Fact]
+    [Test]
     public async Task BypassThrottlingLimit()
     {
         var client = App.CreateClient(
@@ -67,7 +67,7 @@ public class MiscTestCases(Sut App) : TestBase<Sut>
         }
     }
 
-    [Fact]
+    [Test]
     public async Task DontCatchExceptions()
     {
         try
@@ -81,7 +81,7 @@ public class MiscTestCases(Sut App) : TestBase<Sut>
         res.ShouldBe("1");
     }
 
-    [Fact]
+    [Test]
     public async Task STJ_Infinite_Recursion()
     {
         var (rsp, _) = await App.GuestClient.GETAsync<TestCases.STJInfiniteRecursionTest.Endpoint, TestCases.STJInfiniteRecursionTest.Response>();

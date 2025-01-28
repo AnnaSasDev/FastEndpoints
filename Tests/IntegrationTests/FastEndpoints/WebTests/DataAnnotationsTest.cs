@@ -10,7 +10,7 @@ public class DaFixture : AppFixture<Web.Program>;
 
 public class DataAnnotationsTest(DaFixture App) : TestBase<DaFixture>
 {
-    [Fact]
+    [Test]
     public async Task WithBadInput()
     {
         var (rsp, res) =
@@ -26,7 +26,7 @@ public class DataAnnotationsTest(DaFixture App) : TestBase<DaFixture>
         res.Errors.ShouldContainKey("name");
     }
 
-    [Fact]
+    [Test]
     public async Task WithOkInput()
     {
         var (resp, _) =

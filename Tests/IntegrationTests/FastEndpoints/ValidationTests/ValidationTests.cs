@@ -5,7 +5,7 @@ namespace Validation;
 
 public class ValidationTests(Sut App) : TestBase<Sut>
 {
-    [Fact]
+    [Test]
     public async Task HeaderMissing()
     {
         var (_, result) = await App.AdminClient.POSTAsync<
@@ -23,7 +23,7 @@ public class ValidationTests(Sut App) : TestBase<Sut>
         result.Errors.ShouldContainKey("tenantID");
     }
 
-    [Fact]
+    [Test]
     public async Task HeaderMissingButDontThrow()
     {
         var (res, result) = await App.AdminClient.POSTAsync<

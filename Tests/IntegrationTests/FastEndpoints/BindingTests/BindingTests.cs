@@ -1,12 +1,12 @@
-﻿using System.Net;
+﻿using FakeItEasy;
+using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Cryptography;
-using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using TestCases.CustomRequestBinder;
 using TestCases.FormBindingComplexDtos;
-using TestCases.QueryObjectWithObjectsArrayBindingTest;
+using Assert=TUnit.Assertions.Assert;
 using ByteEnum = TestCases.QueryObjectBindingTest.ByteEnum;
 using Endpoint = TestCases.JsonArrayBindingToListOfModels.Endpoint;
 using Person = TestCases.RouteBindingTest.Person;
@@ -15,33 +15,34 @@ using Response = TestCases.RouteBindingInEpWithoutReq.Response;
 
 namespace Binding;
 
+[ClassDataSource<Sut>]
 public class BindingTests(Sut App) : TestBase<Sut>
 {
-    [Fact]
+    [Test]
     public async Task RouteValueReadingInEndpointWithoutRequest()
     {
         var (rsp, res) = await App.Client.GETAsync<
                              EmptyRequest,
                              Response>("/api/test-cases/ep-witout-req-route-binding-test/09809/12", new());
 
-        rsp.StatusCode.ShouldBe(HttpStatusCode.OK);
-        res.CustomerID.ShouldBe(09809);
-        res.OtherID.ShouldBe(12);
+        await Assert.That(rsp.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(res.CustomerID).IsEqualTo(09809);
+        await Assert.That(res.OtherID).IsEqualTo(12);
     }
 
-    [Fact]
+    [Test]
     public async Task RouteValueReadingIsRequired()
     {
         var (rsp, res) = await App.Client.GETAsync<
                              EmptyRequest,
                              ErrorResponse>("/api/test-cases/ep-witout-req-route-binding-test/09809/lkjhlkjh", new());
 
-        rsp.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
-        res.Errors.ShouldNotBeNull();
-        res.Errors.ShouldContainKey("otherId");
+        await Assert.That(rsp.StatusCode).IsEqualTo(HttpStatusCode.BadRequest);
+        await Assert.That(res.Errors).IsNotNull()
+                    .And.ContainsKey("otherId");
     }
 
-    [Fact]
+    [Test]
     public async Task RouteValueBinding()
     {
         var (rsp, res) = await App.Client
@@ -60,20 +61,20 @@ public class BindingTests(Sut App) : TestBase<Sut>
                                           CustomList = [0]
                                       });
 
-        rsp.StatusCode.ShouldBe(HttpStatusCode.OK);
-        res.String.ShouldBe("something");
-        res.Bool.ShouldBe(true);
-        res.Int.ShouldBe(99);
-        res.Long.ShouldBe(483752874564876);
-        res.Double.ShouldBe(2232.12);
-        res.FromBody.ShouldBe("from body value");
-        res.Decimal.ShouldBe(123.45m);
-        res.Url.ShouldBe("https://test.com/");
-        res.Custom.Value.ShouldBe(12);
-        res.CustomList.ShouldBe([1, 2]);
+        await Assert.That(rsp.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(res.String).IsEqualTo("something");
+        await Assert.That(res.Bool).IsEqualTo(true);
+        await Assert.That(res.Int).IsEqualTo(99);
+        await Assert.That(res.Long).IsEqualTo(483752874564876);
+        await Assert.That(res.Double).IsEqualTo(2232.12);
+        await Assert.That(res.FromBody).IsEqualTo("from body value");
+        await Assert.That(res.Decimal).IsEqualTo(123.45m);
+        await Assert.That(res.Url).IsEqualTo("https://test.com/");
+        await Assert.That(res.Custom.Value).IsEqualTo(12);
+        await Assert.That(res.CustomList).IsEqualTo([1, 2]);
     }
 
-    [Fact]
+    [Test]
     public async Task RouteValueBindingFromQueryParams()
     {
         var (rsp, res) = await App.Client
@@ -91,18 +92,18 @@ public class BindingTests(Sut App) : TestBase<Sut>
                                           String = "nothing"
                                       });
 
-        rsp.StatusCode.ShouldBe(HttpStatusCode.OK);
-        res.String.ShouldBe("everything");
-        res.Bool.ShouldBeFalse();
-        res.Int.ShouldBe(99);
-        res.Long.ShouldBe(483752874564876);
-        res.Double.ShouldBe(2232.12);
-        res.FromBody.ShouldBe("from body value");
-        res.Decimal.ShouldBe(123.45m);
-        res.Blank.ShouldBeNull();
+        await Assert.That(rsp.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(res.String).IsEqualTo("everything");
+        await Assert.That(res.Bool).IsEqualTo(false);
+        await Assert.That(res.Int).IsEqualTo(99);
+        await Assert.That(res.Long).IsEqualTo(483752874564876);
+        await Assert.That(res.Double).IsEqualTo(2232.12);
+        await Assert.That(res.FromBody).IsEqualTo("from body value");
+        await Assert.That(res.Decimal).IsEqualTo(123.45m);
+        await Assert.That(res.Blank).IsNull();
     }
 
-    [Fact]
+    [Test]
     public async Task JsonArrayBindingToIEnumerableProps()
     {
         var (rsp, res) = await App.Client
@@ -117,27 +118,26 @@ public class BindingTests(Sut App) : TestBase<Sut>
                                       "dict={\"key1\":\"val1\",\"key2\":\"val2\"}",
                                       new());
 
-        rsp.StatusCode.ShouldBe(HttpStatusCode.OK);
-        res.Doubles.Length.ShouldBe(2);
-        res.Doubles[0].ShouldBe(123.45);
-        res.Dates.Count.ShouldBe(2);
-        res.Dates.First().ShouldBe(DateTime.Parse("2022-01-01"));
-        res.Guids.Count.ShouldBe(2);
-        res.Guids[0].ShouldBe(Guid.Parse("b01ec302-0adc-4a2b-973d-bbfe639ed9a5"));
-        res.Ints.Count().ShouldBe(3);
-        res.Ints.First().ShouldBe(1);
-        res.Steven.ShouldBeEquivalentTo(
-            new TestCases.JsonArrayBindingForIEnumerableProps.Request.Person
-            {
-                Age = 12,
-                Name = "steven"
-            });
-        res.Dict.Count.ShouldBe(2);
-        res.Dict["key1"].ShouldBe("val1");
-        res.Dict["key2"].ShouldBe("val2");
+        await Assert.That(rsp.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(res.Doubles.Length).IsEqualTo(2);
+        await Assert.That(res.Doubles[0]).IsEqualTo(123.45);
+        await Assert.That(res.Dates.Count).IsEqualTo(2);
+        await Assert.That(res.Dates.First()).IsEqualTo(DateTime.Parse("2022-01-01"));
+        await Assert.That(res.Guids.Count).IsEqualTo(2);
+        await Assert.That(res.Guids[0]).IsEqualTo(Guid.Parse("b01ec302-0adc-4a2b-973d-bbfe639ed9a5"));
+        await Assert.That(res.Ints.Count()).IsEqualTo(3);
+        await Assert.That(res.Ints.First()).IsEqualTo(1);
+        await Assert.That(res.Steven).IsEquivalentTo(new TestCases.JsonArrayBindingForIEnumerableProps.Request.Person
+        {
+            Age = 12,
+            Name = "steven"
+        });
+        await Assert.That(res.Dict.Count).IsEqualTo(2);
+        await Assert.That(res.Dict["key1"]).IsEqualTo("val1");
+        await Assert.That(res.Dict["key2"]).IsEqualTo("val2");
     }
 
-    [Fact]
+    [Test]
     public async Task JsonArrayBindingToListOfModels()
     {
         var (rsp, res) = await App.Client.POSTAsync<
@@ -149,12 +149,12 @@ public class BindingTests(Sut App) : TestBase<Sut>
                              new() { Name = "test2" }
                          ]);
 
-        rsp.StatusCode.ShouldBe(HttpStatusCode.OK);
-        res.Count.ShouldBe(2);
-        res[0].Name.ShouldBe("test1");
+        await Assert.That(rsp.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(res.Count).IsEqualTo(2);
+        await Assert.That(res[0].Name).IsEqualTo("test1");
     }
 
-    [Fact]
+    [Test]
     public async Task JsonArrayBindingToIEnumerableDto()
     {
         var req = new TestCases.JsonArrayBindingToIEnumerableDto.Request
@@ -168,12 +168,12 @@ public class BindingTests(Sut App) : TestBase<Sut>
                              TestCases.JsonArrayBindingToIEnumerableDto.Request,
                              List<TestCases.JsonArrayBindingToIEnumerableDto.Response>>(req);
 
-        rsp.StatusCode.ShouldBe(HttpStatusCode.OK);
-        res.Count.ShouldBe(2);
-        res.ShouldBeEquivalentTo(req.Select(x => new TestCases.JsonArrayBindingToIEnumerableDto.Response { Id = x.Id, Name = x.Name }).ToList());
+        await Assert.That(rsp.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(res.Count).IsEqualTo(2);
+        await Assert.That(res).IsEquivalentTo(req.Select(x => new TestCases.JsonArrayBindingToIEnumerableDto.Response { Id = x.Id, Name = x.Name }).ToList());
     }
 
-    [Fact]
+    [Test]
     public async Task DupeParamBindingToIEnumerableProps()
     {
         var (rsp, res) = await App.Client
@@ -197,27 +197,27 @@ public class BindingTests(Sut App) : TestBase<Sut>
                                       "persons={\"name\":\"doe\",\"age\":55}",
                                       new());
 
-        rsp.StatusCode.ShouldBe(HttpStatusCode.OK);
-        res.Doubles.Length.ShouldBe(2);
-        res.Doubles[0].ShouldBe(123.45);
-        res.Dates.Count.ShouldBe(2);
-        res.Dates.First().ShouldBe(DateTime.Parse("2022-01-01"));
-        res.Guids.Count.ShouldBe(2);
-        res.Guids[0].ShouldBe(Guid.Parse("b01ec302-0adc-4a2b-973d-bbfe639ed9a5"));
-        res.Ints.Count().ShouldBe(3);
-        res.Ints.First().ShouldBe(1);
-        res.Strings.Length.ShouldBe(2);
-        res.Strings[0].ShouldBe("[1,2]");
-        res.MoreStrings.Length.ShouldBe(2);
-        res.MoreStrings[0].ShouldBe("[\"one\",\"two\"]");
-        res.Persons.Count().ShouldBe(2);
-        res.Persons.First().Name.ShouldBe("john");
-        res.Persons.First().Age.ShouldBe(45);
-        res.Persons.Last().Name.ShouldBe("doe");
-        res.Persons.Last().Age.ShouldBe(55);
+        await Assert.That(rsp.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(res.Doubles.Length).IsEqualTo(2);
+        await Assert.That(res.Doubles[0]).IsEqualTo(123.45);
+        await Assert.That(res.Dates.Count).IsEqualTo(2);
+        await Assert.That(res.Dates.First()).IsEqualTo(DateTime.Parse("2022-01-01"));
+        await Assert.That(res.Guids.Count).IsEqualTo(2);
+        await Assert.That(res.Guids[0]).IsEqualTo(Guid.Parse("b01ec302-0adc-4a2b-973d-bbfe639ed9a5"));
+        await Assert.That(res.Ints.Count()).IsEqualTo(3);
+        await Assert.That(res.Ints.First()).IsEqualTo(1);
+        await Assert.That(res.Strings.Length).IsEqualTo(2);
+        await Assert.That(res.Strings[0]).IsEqualTo("[1,2]");
+        await Assert.That(res.MoreStrings.Length).IsEqualTo(2);
+        await Assert.That(res.MoreStrings[0]).IsEqualTo("[\"one\",\"two\"]");
+        await Assert.That(res.Persons.Count()).IsEqualTo(2);
+        await Assert.That(res.Persons.First().Name).IsEqualTo("john");
+        await Assert.That(res.Persons.First().Age).IsEqualTo(45);
+        await Assert.That(res.Persons.Last().Name).IsEqualTo("doe");
+        await Assert.That(res.Persons.Last().Age).IsEqualTo(55);
     }
 
-    [Fact]
+    [Test]
     public async Task BindingFromAttributeUse()
     {
         var (rsp, res) = await App.Client
@@ -246,18 +246,17 @@ public class BindingTests(Sut App) : TestBase<Sut>
                                           }
                                       });
 
-        rsp.StatusCode.ShouldBe(HttpStatusCode.OK);
-        res.String.ShouldBe("everything");
-        res.Bool.ShouldBeFalse();
-        res.Int.ShouldBe(99);
-        res.Long.ShouldBe(483752874564876);
-        res.Double.ShouldBe(2232.12);
-        res.FromBody.ShouldBe("from body value");
-        res.Decimal.ShouldBe(123.45m);
-        res.Blank.ShouldBe(256);
-        res.Person.ShouldNotBeNull();
-        res.Person.ShouldBeEquivalentTo(
-            new Person
+        await Assert.That(rsp.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(res.String).IsEqualTo("everything");
+        await Assert.That(res.Bool).IsEqualTo(false);
+        await Assert.That(res.Int).IsEqualTo(99);
+        await Assert.That(res.Long).IsEqualTo(483752874564876);
+        await Assert.That(res.Double).IsEqualTo(2232.12);
+        await Assert.That(res.FromBody).IsEqualTo("from body value");
+        await Assert.That(res.Decimal).IsEqualTo(123.45m);
+        await Assert.That(res.Blank).IsEqualTo(256);
+        await Assert.That(res.Person).IsNotNull()
+            .And.IsEquivalentTo(new Person
             {
                 Age = 45,
                 Name = "john",
@@ -273,7 +272,7 @@ public class BindingTests(Sut App) : TestBase<Sut>
             });
     }
 
-    [Fact]
+    [Test]
     public async Task BindingObjectFromQueryUse()
     {
         var (rsp, res) = await App.Client
@@ -288,9 +287,9 @@ public class BindingTests(Sut App) : TestBase<Sut>
                                       "&CHILD.FavoriteDays=1&ChiLD.FavoriteDays=Saturday&CHILD.ISHiddeN=TruE" +
                                       "&child.strings=string1&child.strings=string2&child.strings=&child.strings=strangeString",
                                       new());
-
-        rsp.StatusCode.ShouldBe(HttpStatusCode.OK);
-        res.ShouldBeEquivalentTo(
+        
+        await Assert.That(rsp.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(res).IsEquivalentTo(
             new TestCases.QueryObjectBindingTest.Response
             {
                 Double = 2232.12,
@@ -321,7 +320,7 @@ public class BindingTests(Sut App) : TestBase<Sut>
             });
     }
 
-    [Fact]
+    [Test]
     public async Task BindingArraysOfObjectsFromQueryUse()
     {
         var (rsp, res) = await App.Client
@@ -336,9 +335,8 @@ public class BindingTests(Sut App) : TestBase<Sut>
                                       "&Objects[1].String=test2&Objects[1].Enum=Wednesday",
                                       new());
 
-        rsp.StatusCode.ShouldBe(HttpStatusCode.OK);
-
-        res.ShouldBeEquivalentTo(
+        await Assert.That(rsp.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(res).IsEquivalentTo(
             new TestCases.QueryObjectWithObjectsArrayBindingTest.Response
             {
                 Person = new()
@@ -386,14 +384,14 @@ public class BindingTests(Sut App) : TestBase<Sut>
             });
     }
 
-    [Fact]
+    [Test]
     public async Task RangeHandling()
     {
         var res = await App.RangeClient.GetStringAsync("api/test-cases/range", Cancellation);
-        res.ShouldBe("fghij");
+        await Assert.That(res).IsEqualTo("fghij");
     }
 
-    [Fact]
+    [Test]
     public async Task FileHandling()
     {
         using var imageContent = new ByteArrayContent(
@@ -412,12 +410,12 @@ public class BindingTests(Sut App) : TestBase<Sut>
 
         using var md5Instance = MD5.Create();
         await using var stream = await res.Content.ReadAsStreamAsync(Cancellation);
-        var resMD5 = BitConverter.ToString(md5Instance.ComputeHash(stream)).Replace("-", "");
+        var resMd5 = BitConverter.ToString(md5Instance.ComputeHash(stream)).Replace("-", "");
 
-        resMD5.ShouldBe("8A1F6A8E27D2E440280050DA549CBE3E");
+        await Assert.That(resMd5).IsEqualTo("8A1F6A8E27D2E440280050DA549CBE3E");
     }
 
-    [Fact]
+    [Test]
     public async Task FileHandlingFileBinding()
     {
         for (var i = 0; i < 3; i++) //repeat upload multiple times
@@ -448,11 +446,11 @@ public class BindingTests(Sut App) : TestBase<Sut>
             await using var stream = await res.Content.ReadAsStreamAsync(Cancellation);
             var resMd5 = BitConverter.ToString(md5Instance.ComputeHash(stream)).Replace("-", "");
 
-            resMd5.ShouldBe("8A1F6A8E27D2E440280050DA549CBE3E");
+            await Assert.That(resMd5).IsEqualTo("8A1F6A8E27D2E440280050DA549CBE3E");
         }
     }
 
-    [Fact]
+    [Test]
     public async Task FormFileCollectionBinding()
     {
         await using var stream1 = File.OpenRead("test.png");
@@ -494,14 +492,14 @@ public class BindingTests(Sut App) : TestBase<Sut>
                                    TestCases.FormFileBindingTest.Request,
                                    TestCases.FormFileBindingTest.Response>(req, sendAsFormData: true);
 
-        rsp.IsSuccessStatusCode.ShouldBeTrue();
-        res.File1Name.ShouldBe("test1.png");
-        res.File2Name.ShouldBe("test2.png");
-        res.CarNames.ShouldBe(["car1.png", "car2.png"]);
-        res.JetNames.ShouldBe(["jet1.png", "jet2.png"]);
+        await Assert.That(rsp.IsSuccessStatusCode).IsTrue();
+        await Assert.That(res.File1Name).IsEqualTo("test1.png");
+        await Assert.That(res.File2Name).IsEqualTo("test2.png");
+        await Assert.That(res.CarNames).IsEquivalentTo(["car1.png", "car2.png"]);
+        await Assert.That(res.JetNames).IsEquivalentTo(["jet1.png", "jet2.png"]);
     }
 
-    [Fact]
+    [Test]
     public async Task ComplexFormDataBindingViaSendAsFormData()
     {
         var book = new Book
@@ -513,11 +511,11 @@ public class BindingTests(Sut App) : TestBase<Sut>
 
         var (rsp, res) = await App.GuestClient.PUTAsync<ToFormEndpoint, Book, Book>(book, sendAsFormData: true);
 
-        rsp.IsSuccessStatusCode.ShouldBeTrue();
-        res.ShouldBeEquivalentTo(book);
+        await Assert.That(rsp.IsSuccessStatusCode).IsTrue();
+        await Assert.That(res).IsEquivalentTo(book);
     }
 
-    [Fact]
+    [Test]
     public async Task ComplexFormDataBinding()
     {
         var request = new HttpRequestMessage(HttpMethod.Post, "api/test-cases/form-binding-complex-dtos");
@@ -562,56 +560,57 @@ public class BindingTests(Sut App) : TestBase<Sut>
         response.EnsureSuccessStatusCode();
 
         var x = TestCases.FormBindingComplexDtos.Endpoint.Result;
-        x.ShouldNotBeNull();
 
-        x!.Title.ShouldBe("book title");
-        x.CoverImage.Name.ShouldBe("CoverImage");
-        x.SourceFiles.Count.ShouldBe(2);
-        x.SourceFiles[0].Name.ShouldBe("SourceFiles[0]");
-        x.SourceFiles[1].Name.ShouldBe("SourceFiles[1]");
-        x.MainAuthor.ShouldNotBeNull();
-        x.MainAuthor.Name.ShouldBe("main author name");
-        x.MainAuthor.ProfileImage.Name.ShouldBe("MainAuthor.ProfileImage");
-        x.MainAuthor.DocumentFiles.Count.ShouldBe(2);
-        x.MainAuthor.DocumentFiles[0].Name.ShouldBe("MainAuthor.DocumentFiles");
-        x.MainAuthor.DocumentFiles[1].Name.ShouldBe("MainAuthor.DocumentFiles");
-        x.MainAuthor.MainAddress.ShouldNotBeNull();
-        x.MainAuthor.MainAddress.Street.ShouldBe("main author address street");
-        x.MainAuthor.MainAddress.MainImage.Name.ShouldBe("MainAuthor.MainAddress.MainImage");
-        x.MainAuthor.MainAddress.AlternativeImages.Count.ShouldBe(2);
-        x.MainAuthor.MainAddress.AlternativeImages[0].Name.ShouldBe("MainAuthor.MainAddress.AlternativeImages");
-        x.MainAuthor.MainAddress.AlternativeImages[1].Name.ShouldBe("MainAuthor.MainAddress.AlternativeImages");
-        x.MainAuthor.OtherAddresses.Count.ShouldBe(2);
-        x.MainAuthor.OtherAddresses[0].MainImage.Name.ShouldBe("MainAuthor.OtherAddresses[0].MainImage");
-        x.MainAuthor.OtherAddresses[0].AlternativeImages.Count.ShouldBe(2);
-        x.MainAuthor.OtherAddresses[0].AlternativeImages[0].Name.ShouldBe("MainAuthor.OtherAddresses[0].AlternativeImages");
-        x.MainAuthor.OtherAddresses[0].AlternativeImages[1].Name.ShouldBe("MainAuthor.OtherAddresses[0].AlternativeImages");
-        x.MainAuthor.OtherAddresses[1].MainImage.Name.ShouldBe("MainAuthor.OtherAddresses[1].MainImage");
-        x.MainAuthor.OtherAddresses[1].AlternativeImages.Count.ShouldBe(2);
-        x.MainAuthor.OtherAddresses[1].AlternativeImages[0].Name.ShouldBe("MainAuthor.OtherAddresses[1].AlternativeImages");
-        x.MainAuthor.OtherAddresses[1].AlternativeImages[1].Name.ShouldBe("MainAuthor.OtherAddresses[1].AlternativeImages");
-        x.CoAuthors.Count.ShouldBe(1);
-        x.CoAuthors[0].Name.ShouldBe("co author 0 name");
-        x.CoAuthors[0].ProfileImage.Name.ShouldBe("CoAuthors[0].ProfileImage");
-        x.CoAuthors[0].DocumentFiles.Count.ShouldBe(2);
-        x.CoAuthors[0].DocumentFiles[0].Name.ShouldBe("CoAuthors[0].DocumentFiles");
-        x.CoAuthors[0].DocumentFiles[1].Name.ShouldBe("CoAuthors[0].DocumentFiles");
-        x.CoAuthors[0].MainAddress.Street.ShouldBe("co author 0 address street");
-        x.CoAuthors[0].MainAddress.MainImage.Name.ShouldBe("CoAuthors[0].MainAddress.MainImage");
-        x.CoAuthors[0].MainAddress.AlternativeImages.Count.ShouldBe(2);
-        x.CoAuthors[0].MainAddress.AlternativeImages[0].Name.ShouldBe("CoAuthors[0].MainAddress.AlternativeImages");
-        x.CoAuthors[0].MainAddress.AlternativeImages[1].Name.ShouldBe("CoAuthors[0].MainAddress.AlternativeImages");
-        x.CoAuthors[0].OtherAddresses.Count.ShouldBe(1);
-        x.CoAuthors[0].OtherAddresses[0].Street.ShouldBe("co author 0 other address 0 street");
-        x.CoAuthors[0].OtherAddresses[0].MainImage.Name.ShouldBe("CoAuthors[0].OtherAddresses[0].MainImage");
-        x.CoAuthors[0].OtherAddresses[0].AlternativeImages.Count.ShouldBe(2);
-        x.CoAuthors[0].OtherAddresses[0].AlternativeImages[0].Name.ShouldBe("CoAuthors[0].OtherAddresses[0].AlternativeImages[0]");
-        x.CoAuthors[0].OtherAddresses[0].AlternativeImages[1].Name.ShouldBe("CoAuthors[0].OtherAddresses[0].AlternativeImages[1]");
-        x.BarCodes.First().ShouldBe(12345);
-        x.BarCodes.Last().ShouldBe(54321);
+        await Assert.That(x).IsNotNull();
+
+        await Assert.That(x!.Title).IsEqualTo("book title");
+        await Assert.That(x.CoverImage.Name).IsEqualTo("CoverImage");
+        await Assert.That(x.SourceFiles.Count).IsEqualTo(2);
+        await Assert.That(x.SourceFiles[0].Name).IsEqualTo("SourceFiles[0]");
+        await Assert.That(x.SourceFiles[1].Name).IsEqualTo("SourceFiles[1]");
+        await Assert.That(x.MainAuthor).IsNotNull();
+        await Assert.That(x.MainAuthor.Name).IsEqualTo("main author name");
+        await Assert.That(x.MainAuthor.ProfileImage.Name).IsEqualTo("MainAuthor.ProfileImage");
+        await Assert.That(x.MainAuthor.DocumentFiles.Count).IsEqualTo(2);
+        await Assert.That(x.MainAuthor.DocumentFiles[0].Name).IsEqualTo("MainAuthor.DocumentFiles");
+        await Assert.That(x.MainAuthor.DocumentFiles[1].Name).IsEqualTo("MainAuthor.DocumentFiles");
+        await Assert.That(x.MainAuthor.MainAddress).IsNotNull();
+        await Assert.That(x.MainAuthor.MainAddress.Street).IsEqualTo("main author address street");
+        await Assert.That(x.MainAuthor.MainAddress.MainImage.Name).IsEqualTo("MainAuthor.MainAddress.MainImage");
+        await Assert.That(x.MainAuthor.MainAddress.AlternativeImages.Count).IsEqualTo(2);
+        await Assert.That(x.MainAuthor.MainAddress.AlternativeImages[0].Name).IsEqualTo("MainAuthor.MainAddress.AlternativeImages");
+        await Assert.That(x.MainAuthor.MainAddress.AlternativeImages[1].Name).IsEqualTo("MainAuthor.MainAddress.AlternativeImages");
+        await Assert.That(x.MainAuthor.OtherAddresses.Count).IsEqualTo(2);
+        await Assert.That(x.MainAuthor.OtherAddresses[0].MainImage.Name).IsEqualTo("MainAuthor.OtherAddresses[0].MainImage");
+        await Assert.That(x.MainAuthor.OtherAddresses[0].AlternativeImages.Count).IsEqualTo(2);
+        await Assert.That(x.MainAuthor.OtherAddresses[0].AlternativeImages[0].Name).IsEqualTo("MainAuthor.OtherAddresses[0].AlternativeImages");
+        await Assert.That(x.MainAuthor.OtherAddresses[0].AlternativeImages[1].Name).IsEqualTo("MainAuthor.OtherAddresses[0].AlternativeImages");
+        await Assert.That(x.MainAuthor.OtherAddresses[1].MainImage.Name).IsEqualTo("MainAuthor.OtherAddresses[1].MainImage");
+        await Assert.That(x.MainAuthor.OtherAddresses[1].AlternativeImages.Count).IsEqualTo(2);
+        await Assert.That(x.MainAuthor.OtherAddresses[1].AlternativeImages[0].Name).IsEqualTo("MainAuthor.OtherAddresses[1].AlternativeImages");
+        await Assert.That(x.MainAuthor.OtherAddresses[1].AlternativeImages[1].Name).IsEqualTo("MainAuthor.OtherAddresses[1].AlternativeImages");
+        await Assert.That(x.CoAuthors.Count).IsEqualTo(1);
+        await Assert.That(x.CoAuthors[0].Name).IsEqualTo("co author 0 name");
+        await Assert.That(x.CoAuthors[0].ProfileImage.Name).IsEqualTo("CoAuthors[0].ProfileImage");
+        await Assert.That(x.CoAuthors[0].DocumentFiles.Count).IsEqualTo(2);
+        await Assert.That(x.CoAuthors[0].DocumentFiles[0].Name).IsEqualTo("CoAuthors[0].DocumentFiles");
+        await Assert.That(x.CoAuthors[0].DocumentFiles[1].Name).IsEqualTo("CoAuthors[0].DocumentFiles");
+        await Assert.That(x.CoAuthors[0].MainAddress.Street).IsEqualTo("co author 0 address street");
+        await Assert.That(x.CoAuthors[0].MainAddress.MainImage.Name).IsEqualTo("CoAuthors[0].MainAddress.MainImage");
+        await Assert.That(x.CoAuthors[0].MainAddress.AlternativeImages.Count).IsEqualTo(2);
+        await Assert.That(x.CoAuthors[0].MainAddress.AlternativeImages[0].Name).IsEqualTo("CoAuthors[0].MainAddress.AlternativeImages");
+        await Assert.That(x.CoAuthors[0].MainAddress.AlternativeImages[1].Name).IsEqualTo("CoAuthors[0].MainAddress.AlternativeImages");
+        await Assert.That(x.CoAuthors[0].OtherAddresses.Count).IsEqualTo(1);
+        await Assert.That(x.CoAuthors[0].OtherAddresses[0].Street).IsEqualTo("co author 0 other address 0 street");
+        await Assert.That(x.CoAuthors[0].OtherAddresses[0].MainImage.Name).IsEqualTo("CoAuthors[0].OtherAddresses[0].MainImage");
+        await Assert.That(x.CoAuthors[0].OtherAddresses[0].AlternativeImages.Count).IsEqualTo(2);
+        await Assert.That(x.CoAuthors[0].OtherAddresses[0].AlternativeImages[0].Name).IsEqualTo("CoAuthors[0].OtherAddresses[0].AlternativeImages[0]");
+        await Assert.That(x.CoAuthors[0].OtherAddresses[0].AlternativeImages[1].Name).IsEqualTo("CoAuthors[0].OtherAddresses[0].AlternativeImages[1]");
+        await Assert.That(x.BarCodes.First()).IsEqualTo(12345);
+        await Assert.That(x.BarCodes.Last()).IsEqualTo(54321);
     }
 
-    [Fact]
+    [Test]
     public async Task PlainTextBodyModelBinding()
     {
         using var stringContent = new StringContent("this is the body content");
@@ -621,22 +620,23 @@ public class BindingTests(Sut App) : TestBase<Sut>
 
         var res = await rsp.Content.ReadFromJsonAsync<TestCases.PlainTextRequestTest.Response>(Cancellation);
 
-        res!.BodyContent.ShouldBe("this is the body content");
-        res.Id.ShouldBe(12345);
+        await Assert.That(res).IsNotNull();
+        await Assert.That(res!.BodyContent).IsEqualTo("this is the body content");
+        await Assert.That(res.Id).IsEqualTo(12345);
     }
 
-    [Fact]
+    [Test]
     public async Task GetRequestWithRouteParameterAndReqDto()
     {
         var (rsp, res) = await App.CustomerClient.GETAsync<EmptyRequest, ErrorResponse>(
                              "/api/sales/orders/retrieve/54321",
                              new());
 
-        rsp.StatusCode.ShouldBe(HttpStatusCode.OK);
-        res.Message.ShouldBe("ok!");
+        await Assert.That(rsp.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(res.Message).IsEqualTo("ok!");
     }
 
-    [Fact]
+    [Test]
     public async Task QueryParamReadingInEndpointWithoutRequest()
     {
         var (rsp, res) = await App.GuestClient.GETAsync<
@@ -651,30 +651,27 @@ public class BindingTests(Sut App) : TestBase<Sut>
                              "&floaty=3.2",
                              new());
 
-        rsp.StatusCode.ShouldBe(HttpStatusCode.OK);
-        res.CustomerID.ShouldBe(09809);
-        res.OtherID.ShouldBe(12);
-        rsp.StatusCode.ShouldBe(HttpStatusCode.OK);
-        res.Doubles.Length.ShouldBe(2);
-        res.Doubles[0].ShouldBe(123.45);
-        res.Guids.Count.ShouldBe(2);
-        res.Guids[0].ShouldBe(Guid.Parse("b01ec302-0adc-4a2b-973d-bbfe639ed9a5"));
-        res.Ints.Count().ShouldBe(3);
-        res.Ints.First().ShouldBe(1);
+        await Assert.That(rsp.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(res.CustomerID).IsEqualTo(09809);
+        await Assert.That(res.OtherID).IsEqualTo(12);
+        await Assert.That(res.Doubles).IsEquivalentTo([123.45, 543.21]);
+        await Assert.That(res.Guids).IsEquivalentTo([Guid.Parse("b01ec302-0adc-4a2b-973d-bbfe639ed9a5"), Guid.Parse("e08664a4-efd8-4062-a1e1-6169c6eac2ab")]);
+        await Assert.That(res.Ints).IsEquivalentTo([1, 2, 3]);
+        await Assert.That(res.Floaty).IsEqualTo(3.2f);
     }
 
-    [Fact]
+    [Test]
     public async Task QueryParamReadingIsRequired()
     {
         var (rsp, res) = await App.GuestClient.GETAsync<
                              EmptyRequest,
                              ErrorResponse>("/api/test-cases/ep-witout-req-query-param-binding-test?customerId=09809&otherId=lkjhlkjh", new());
 
-        rsp.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
-        res.Errors.ShouldContainKey("otherId");
+        await Assert.That(rsp.StatusCode).IsEqualTo(HttpStatusCode.BadRequest);
+        await Assert.That(res.Errors).ContainsKey("otherId");
     }
 
-    [Fact]
+    [Test]
     public async Task FromBodyJsonBinding()
     {
         var (rsp, res) = await App.CustomerClient.POSTAsync<
@@ -691,15 +688,15 @@ public class BindingTests(Sut App) : TestBase<Sut>
                                  }
                              });
 
-        rsp.StatusCode.ShouldBe(HttpStatusCode.OK);
-        res.Product.Name.ShouldBe("test product");
-        res.Product.Price.ShouldBe(200.10m);
-        res.Product.Id.ShouldBe(202);
-        res.CustomerID.ShouldBe(123);
-        res.Id.ShouldBe(0);
+        await Assert.That(rsp.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(res.Product.Id).IsEqualTo(202);
+        await Assert.That(res.Product.Name).IsEqualTo("test product");
+        await Assert.That(res.Product.Price).IsEqualTo(200.10m);
+        await Assert.That(res.CustomerID).IsEqualTo(123);
+        await Assert.That(res.Id).IsEqualTo(0);
     }
 
-    [Fact]
+    [Test]
     public async Task FromBodyJsonBindingValidationError()
     {
         var (rsp, res) = await App.CustomerClient.POSTAsync<
@@ -716,12 +713,12 @@ public class BindingTests(Sut App) : TestBase<Sut>
                                  }
                              });
 
-        rsp.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
-        res.Errors.Count.ShouldBe(1);
-        res.Errors.ContainsKey("product.Price").ShouldBeTrue();
+        await Assert.That(rsp.StatusCode).IsEqualTo(HttpStatusCode.BadRequest);
+        await Assert.That(res.Errors).ContainsKey("Product.Price")
+            .And.HasCount().EqualTo(1);
     }
 
-    [Fact]
+    [Test]
     public async Task CustomRequestBinder()
     {
         var (rsp, res) = await App.CustomerClient.POSTAsync<
@@ -735,28 +732,29 @@ public class BindingTests(Sut App) : TestBase<Sut>
                                  Price = 10.10m
                              });
 
-        rsp.StatusCode.ShouldBe(HttpStatusCode.OK);
-        res.Product!.Name.ShouldBe("test product");
-        res.Product.Price.ShouldBe(10.10m);
-        res.Product.Id.ShouldBe(202);
-        res.CustomerID.ShouldBe("123");
-        res.Id.ShouldBe(null);
+        await Assert.That(rsp.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(res.Product).IsNotNull();
+        await Assert.That(res.Product!.Id).IsEqualTo(202);
+        await Assert.That(res.Product.Name).IsEqualTo("test product");
+        await Assert.That(res.Product.Price).IsEqualTo(10.10m);
+        await Assert.That(res.CustomerID).IsEqualTo("123");
+        await Assert.That(res.Id).IsNull();
     }
 
-    [Fact]
+    [Test]
     public async Task TypedHeaderPropertyBinding()
     {
         using var stringContent = new StringContent("this is the body content");
         stringContent.Headers.ContentDisposition = ContentDispositionHeaderValue.Parse("attachment; filename=\"_filename_.jpg\"");
 
         var rsp = await App.GuestClient.PostAsync("api/test-cases/typed-header-binding-test", stringContent, Cancellation);
-        rsp.IsSuccessStatusCode.ShouldBeTrue();
+        await Assert.That(rsp.IsSuccessStatusCode).IsTrue();
 
         var res = await rsp.Content.ReadFromJsonAsync<string>(Cancellation);
-        res.ShouldBe("_filename_.jpg");
+        await Assert.That(res).IsEqualTo("_filename_.jpg");
     }
 
-    [Fact]
+    [Test]
     public async Task DontBindAttribute()
     {
         var req = new TestCases.DontBindAttributeTest.Request
@@ -766,9 +764,9 @@ public class BindingTests(Sut App) : TestBase<Sut>
         };
 
         var rsp = await App.GuestClient.PostAsJsonAsync("api/test-cases/dont-bind-attribute-test/IGNORE_ME", req, Cancellation);
-        rsp.IsSuccessStatusCode.ShouldBeTrue();
+        await Assert.That(rsp.IsSuccessStatusCode).IsTrue();
 
         var res = await rsp.Content.ReadAsStringAsync(Cancellation);
-        res.ShouldBe("123 - test");
+        await Assert.That(res).IsEqualTo("123 - test");
     }
 }

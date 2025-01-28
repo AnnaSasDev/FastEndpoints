@@ -4,7 +4,7 @@ namespace Processors;
 
 public class ProcessorTests(Sut App) : TestBase<Sut>
 {
-    [Fact]
+    [Test]
     public async Task PreProcessorShortCircuitingWhileValidatorFails()
     {
         var x = await App.Client.GETAsync<
@@ -20,7 +20,7 @@ public class ProcessorTests(Sut App) : TestBase<Sut>
         x.Result.ToString().ShouldBe("hello from pre-processor!");
     }
 
-    [Fact]
+    [Test]
     public async Task PreProcessorsAreRunIfValidationFailuresOccur()
     {
         var (rsp, res) = await App.AdminClient.POSTAsync<
@@ -39,7 +39,7 @@ public class ProcessorTests(Sut App) : TestBase<Sut>
         res.Errors["x"].First().ShouldBe("blah");
     }
 
-    [Fact]
+    [Test]
     public async Task ProcessorAttributes()
     {
         var (rsp, res) =
@@ -56,7 +56,7 @@ public class ProcessorTests(Sut App) : TestBase<Sut>
         res.ShouldBe(["zero", "one", "two", "three", "four"]);
     }
 
-    [Fact]
+    [Test]
     public async Task PreProcessorShortCircuitMissingHeader()
     {
         var (rsp, res) = await App.Client.GETAsync<
@@ -70,7 +70,7 @@ public class ProcessorTests(Sut App) : TestBase<Sut>
         res.Errors.ShouldContainKey("missingHeaders");
     }
 
-    [Fact]
+    [Test]
     public async Task PreProcessorShortCircuitWrongHeaderValue()
     {
         var (rsp, _) = await App.AdminClient.POSTAsync<
@@ -85,7 +85,7 @@ public class ProcessorTests(Sut App) : TestBase<Sut>
         rsp.StatusCode.ShouldBe(HttpStatusCode.MethodNotAllowed);
     }
 
-    [Fact]
+    [Test]
     public async Task PreProcessorShortCircuitHandlerExecuted()
     {
         var (rsp, res) = await App.CustomerClient.GETAsync<
@@ -97,7 +97,7 @@ public class ProcessorTests(Sut App) : TestBase<Sut>
         res.Message.ShouldBe("ok!");
     }
 
-    [Fact]
+    [Test]
     public async Task ProcessorStateWorks()
     {
         var x = await App.Client.GETAsync<
@@ -109,7 +109,7 @@ public class ProcessorTests(Sut App) : TestBase<Sut>
         x.Result.ShouldBe("10101 jane doe True");
     }
 
-    [Fact]
+    [Test]
     public async Task PostProcessorCanHandleExceptions()
     {
         var x = await App.Client.GETAsync<
@@ -121,7 +121,7 @@ public class ProcessorTests(Sut App) : TestBase<Sut>
         x.Result.Type.ShouldBe(nameof(NotImplementedException));
     }
 
-    [Fact]
+    [Test]
     public async Task ExceptionIsThrownWhenAPostProcDoesntHandleExceptions()
     {
         var (rsp, res) = await App.Client.GETAsync<TestCases.PostProcessorTest.EpNoPostProcessor, InternalErrorResponse>();

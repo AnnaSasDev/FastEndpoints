@@ -5,7 +5,7 @@ namespace RemoteProcedureCalls;
 
 public class ServerStreamCommand(Sut f) : RpcTestBase(f)
 {
-    [Fact]
+    [Test]
     public async Task Server_Stream()
     {
         var command = new StatusStreamCommand

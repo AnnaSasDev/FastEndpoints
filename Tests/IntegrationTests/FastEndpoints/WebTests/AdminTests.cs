@@ -4,9 +4,10 @@ using Login = Admin.Login;
 
 namespace Web;
 
-public class AdminTests(Sut App) : TestBase<Sut>
+[ClassDataSource<Sut>]
+public class AdminTests(Sut App) : TestBase
 {
-    [Fact]
+    [Test]
     public async Task AdminLoginWithBadInput()
     {
         var (resp, result) = await App.GuestClient.POSTAsync<Login.Endpoint, Login.Request, ErrorResponse>(
@@ -20,7 +21,7 @@ public class AdminTests(Sut App) : TestBase<Sut>
         result.Errors.Count.ShouldBe(2);
     }
 
-    [Fact]
+    [Test]
     public async Task AdminLoginSuccess()
     {
         var (resp, result) = await App.GuestClient.POSTAsync<Login.Endpoint, Login.Request, Login.Response>(
@@ -35,7 +36,7 @@ public class AdminTests(Sut App) : TestBase<Sut>
         result.JWTToken.ShouldNotBeNull();
     }
 
-    [Fact]
+    [Test]
     public async Task AdminLoginInvalidCreds()
     {
         var (rsp, _) = await App.GuestClient.POSTAsync<Login.Endpoint, Login.Request, Login.Response>(
@@ -53,7 +54,7 @@ public class AdminTests(Sut App) : TestBase<Sut>
         errRsp!.Errors["generalErrors"][0].ShouldBe("Authentication Failed!");
     }
 
-    [Fact]
+    [Test]
     public async Task AdminLoginThrottling()
     {
         var client = App.CreateClient();
@@ -86,7 +87,7 @@ public class AdminTests(Sut App) : TestBase<Sut>
         successCount.ShouldBe(5);
     }
 
-    [Fact]
+    [Test]
     public async Task AdminLoginV2()
     {
         var (resp, result) = await App.GuestClient.GETAsync<Login.Endpoint_V2, EmptyRequest, int>(new());

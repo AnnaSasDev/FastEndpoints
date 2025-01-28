@@ -2,7 +2,7 @@
 
 public class VoidCommand(Sut f) : RpcTestBase(f)
 {
-    [Fact]
+    [Test]
     public async Task Void()
     {
         var command = new TestCases.CommandBusTest.VoidCommand

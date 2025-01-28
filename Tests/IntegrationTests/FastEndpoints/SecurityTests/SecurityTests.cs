@@ -10,7 +10,7 @@ namespace Security;
 
 public class SecurityTests(Sut App) : TestBase<Sut>
 {
-    [Fact]
+    [Test]
     public async Task MultiVerbEndpointAnonymousUserPutFail()
     {
         using var imageContent = new ByteArrayContent(Array.Empty<byte>());
@@ -24,7 +24,7 @@ public class SecurityTests(Sut App) : TestBase<Sut>
         res.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
     }
 
-    [Fact]
+    [Test]
     public async Task ClaimMissing()
     {
         var (_, result) = await App.AdminClient.POSTAsync<
@@ -42,7 +42,7 @@ public class SecurityTests(Sut App) : TestBase<Sut>
         result.Errors.ShouldContainKey("null-claim");
     }
 
-    [Fact]
+    [Test]
     public async Task ClaimMissingButDontThrow()
     {
         var (res, result) = await App.AdminClient.POSTAsync<
@@ -59,7 +59,7 @@ public class SecurityTests(Sut App) : TestBase<Sut>
     }
 
     //refresh tokens
-    [Fact]
+    [Test]
     public async Task LoginEndpointGeneratesCorrectToken()
     {
         var (rsp, res) = await App.GuestClient.GETAsync<RefreshTest.LoginEndpoint, TokenResponse>();
@@ -72,7 +72,7 @@ public class SecurityTests(Sut App) : TestBase<Sut>
         token.Claims.Single(c => c.Type == "permissions").Value.ShouldBe("perm1");
     }
 
-    [Fact]
+    [Test]
     public async Task RefreshEndpointValidationWorks()
     {
         var (rsp, res) = await App.GuestClient.POSTAsync<RefreshTest.TokenService, TokenRequest, ErrorResponse>(
@@ -87,7 +87,7 @@ public class SecurityTests(Sut App) : TestBase<Sut>
         res.Errors["refreshToken"][0].ShouldBe("invalid refresh token");
     }
 
-    [Fact]
+    [Test]
     public async Task RefreshEndpointReturnsCorrectTokenResponse()
     {
         var (rsp, res) = await App.GuestClient.POSTAsync<RefreshTest.TokenService, TokenRequest, TokenResponse>(
@@ -106,7 +106,7 @@ public class SecurityTests(Sut App) : TestBase<Sut>
         token.Claims.Single(c => c.Type == "new-claim").Value.ShouldBe("new-value");
     }
 
-    [Fact]
+    [Test]
     public async Task Jwt_Revocation()
     {
         var client = App.CreateClient(c => c.DefaultRequestHeaders.Authorization = new("Bearer", "revoked token"));
@@ -116,7 +116,7 @@ public class SecurityTests(Sut App) : TestBase<Sut>
         res.ShouldBe("Bearer token has been revoked!");
     }
 
-    [Fact]
+    [Test]
     public async Task IAuthorization_Injection_Pass()
     {
         var (rsp, res) = await App.AdminClient.GETAsync<TestCases.IAuthorizationServiceInjectionTest.Endpoint, bool>();
@@ -125,7 +125,7 @@ public class SecurityTests(Sut App) : TestBase<Sut>
         res.ShouldBeTrue();
     }
 
-    [Fact]
+    [Test]
     public async Task IAuthorization_Injection_Fail()
     {
         var (rsp, res) = await App.CustomerClient.GETAsync<TestCases.IAuthorizationServiceInjectionTest.Endpoint, bool>();

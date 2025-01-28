@@ -19,7 +19,7 @@ public sealed class MyStateFixture : StateFixture
 
 public class StateFixtureTests(Sut App, MyStateFixture State) : TestBase<Sut, MyStateFixture>
 {
-    [Fact]
+    [Test]
     public async Task Fixture_Is_Not_Null()
         => App.ShouldNotBeNull();
 
