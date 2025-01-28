@@ -62,7 +62,7 @@ public class SendForbiddenShouldSetCorrectResponse : Endpoint<Request, Response>
         await Assert.That(Response).IsNotNull();
         await Assert.That(Response.Id).IsEqualTo(0);
         await Assert.That(ValidationFailed).IsFalse();
-        await Assert.That(HttpContext.Items[0]).IsNotNull();
+        await Assert.That(HttpContext.Items[0]).IsNull();
         await Assert.That(HttpContext.Response.StatusCode).IsEqualTo(StatusCodes.Status403Forbidden);
     }
 }

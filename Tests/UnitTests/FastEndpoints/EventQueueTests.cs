@@ -89,7 +89,7 @@ public class EventQueueTests
         }
     }
 
-    [Test]
+    [Test, NotInParallel] 
     public async Task event_hub_publisher_mode()
     {
         var services = new ServiceCollection();

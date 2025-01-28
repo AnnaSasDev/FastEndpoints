@@ -1,5 +1,6 @@
 ﻿using FakeItEasy;
 using FastEndpoints;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using TestCases.EventHandlingTest;
 
@@ -16,8 +17,9 @@ public class EventBusTests
          .Returns(Task.CompletedTask)
          .Once();
 
-        var evnt = Testory.CreateEvent([fakeHandler]);
-        await evnt.PublishAsync(cancellation: TestContext.Current.CancellationToken);
+        // await evnt.PublishAsync(cancellation: TestContext.Current.CancellationToken);
+        var evnt = Factory.CreateEvent([fakeHandler]);
+        await evnt.PublishAsync();
     }
 
     [Test]
@@ -34,16 +36,19 @@ public class EventBusTests
             new UpdateInventoryLevel()
         };
 
-        await new EventBus<NewItemAddedToStock>(handlers).PublishAsync(event1, Mode.WaitForNone, TestContext.Current.CancellationToken);
-        await new EventBus<NewItemAddedToStock>(handlers).PublishAsync(event2, Mode.WaitForAny, TestContext.Current.CancellationToken);
+        // await new EventBus<NewItemAddedToStock>(handlers).PublishAsync(event1, Mode.WaitForNone, TestContext.Current.CancellationToken);
+        await new EventBus<NewItemAddedToStock>(handlers).PublishAsync(event1, Mode.WaitForNone);
+        // await new EventBus<NewItemAddedToStock>(handlers).PublishAsync(event2, Mode.WaitForAny, TestContext.Current.CancellationToken);
+        await new EventBus<NewItemAddedToStock>(handlers).PublishAsync(event2, Mode.WaitForAny);
 
-        await Task.Delay(100, TestContext.Current.CancellationToken);
-
-        event2.ID.ShouldBe(0);
-        event2.Name.ShouldBe("pass");
-
-        event1.ID.ShouldBe(0);
-        event1.Name.ShouldBe("pass");
+        // await Task.Delay(100, TestContext.Current.CancellationToken);
+        await Task.Delay(100);
+        
+        await Assert.That(event2.ID).IsEqualTo(0);
+        await Assert.That(event2.Name).IsEqualTo("pass");
+        
+        await Assert.That(event1.ID).IsEqualTo(0);
+        await Assert.That(event1.Name).IsEqualTo("pass");
     }
 
     [Test]
@@ -53,8 +58,9 @@ public class EventBusTests
 
         await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
             () => new EventBus<NewItemAddedToStock>([new NotifyCustomers(logger)]).PublishAsync(
-                new(),
-                cancellation: TestContext.Current.CancellationToken));
+                new()
+                // cancellation: TestContext.Current.CancellationToken
+                ));
     }
 
     [Test]
@@ -62,15 +68,16 @@ public class EventBusTests
     {
         var fakeHandler = new FakeEventHandler();
 
-        Testory.RegisterTestServices(
+        Factory.RegisterTestServices(
             s =>
             {
                 s.AddSingleton<IEventHandler<NewItemAddedToStock>>(fakeHandler);
             });
 
-        await new NewItemAddedToStock { Name = "xyz" }.PublishAsync(cancellation: TestContext.Current.CancellationToken);
+        // await new NewItemAddedToStock { Name = "xyz" }.PublishAsync(cancellation: TestContext.Current.CancellationToken);
+        await new NewItemAddedToStock { Name = "xyz" }.PublishAsync();
 
-        fakeHandler.Name.ShouldBe("xyz");
+        await Assert.That(fakeHandler.Name).IsEqualTo("xyz");
     }
 }
 

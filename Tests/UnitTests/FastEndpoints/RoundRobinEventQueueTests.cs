@@ -51,10 +51,10 @@ public class RoundRobinEventQueueTests
         }
         else if (writerB.Responses.Count == 2)
         {
-            await Assert.That(writerA.Responses.Count).IsEqualTo(2);
-            await Assert.That(writerA.Responses[0].EventID).IsEqualTo(111);
+            await Assert.That(writerA.Responses.Count).IsEqualTo(1);
+            await Assert.That(writerA.Responses[0].EventID).IsEqualTo(222);
             
-            await Assert.That(writerB.Responses[0].EventID).IsEqualTo(222);
+            await Assert.That(writerB.Responses[0].EventID).IsEqualTo(111);
             await Assert.That(writerB.Responses[1].EventID).IsEqualTo(333);
         }
         else
